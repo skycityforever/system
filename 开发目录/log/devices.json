@@ -26,5 +26,19 @@
         "status": "online",
         "submit_time": "2026-03-20 11:12:54",
         "id": 2
+    },
+    {
+        "device_id": "HOME-YARD-01",
+        "device_name": "后院摄像头",
+        "ip_address": "127.0.0.1",
+        "device_type": "ptz_camera",
+        "location": "屋顶",
+        "environment": "dark",
+        "description": "",
+        "activate_time": "2026/03/20 11:17:14",
+        "total_usage_hours": "0",
+        "status": "online",
+        "submit_time": "2026-03-20 11:18:46",
+        "id": 3
     }
 ]
