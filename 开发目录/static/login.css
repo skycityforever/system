@@ -1,0 +1,104 @@
+.glass-panel {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+body {
+    background-color: #020617;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: radial-gradient(circle at 50% 50%, #0f172a, #020617);
+}
+.profile-ring {
+    padding: 4px;
+    border: 2px solid #22d3ee;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+
+/* 登录卡片增强样式 */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 16px;
+    padding: 40px 35px;
+    box-shadow: 0 8px 30px rgba(34, 211, 238, 0.1);
+}
+
+/* 表单输入框 */
+.form-control {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 15px;
+}
+.form-control:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 0.25rem rgba(34, 211, 238, 0.2);
+    color: #fff;
+}
+
+<!--        /* 按钮 */-->
+<!--        .btn-primary {-->
+<!--            background: linear-gradient(90deg, #0ea5e9, #22d3ee);-->
+<!--            border: none;-->
+<!--            border-radius: 8px;-->
+<!--            padding: 12px;-->
+<!--            font-weight: 600;-->
+<!--            transition: all 0.3s;-->
+<!--        }-->
+<!--        .btn-primary:hover {-->
+<!--            transform: translateY(-2px);-->
+<!--            box-shadow: 0 5px 15px rgba(34, 211, 238, 0.3);-->
+<!--        }-->
+
+/* 按钮 */
+.btn-primary {
+    /* 替换成深色背景 + 青蓝色边框/文字（匹配参考样式） */
+    background: #00122e; /* 深蓝底色，匹配参考按钮背景 */
+    border: 1px solid #22d3ee; /* 青蓝色边框，和参考样式一致 */
+    color: #22d3ee; /* 文字颜色改为青蓝色 */
+    border-radius: 8px; /* 保留原有圆角 */
+    padding: 12px; /* 保留原有内边距（大小不变） */
+    font-weight: 600; /* 保留原有字体粗细 */
+    transition: all 0.3s; /* 保留原有过渡效果 */
+}
+.btn-primary:hover {
+    transform: translateY(-2px); /* 保留原有悬浮上移 */
+    /* 悬浮时增强边框/阴影效果，贴合参考样式的视觉感 */
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
+    border-color: #0ea5e9; /* 悬浮时边框略深，增加层次感 */
+    color: #0ea5e9; /* 悬浮时文字略深 */
+    background: #001a41; /* 悬浮时底色稍亮，不突兀 */
+}
+
+
+/* 文字发光 */
+.neon-title {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.4), 0 0 20px rgba(34, 211, 238, 0.2);
+}
+
+/* 错误提示 */
+.error {
+    color: #f43f5e;
+    font-size: 0.9rem;
+}
+
+/* 链接 */
+a {
+    color: #22d3ee;
+    text-decoration: none;
+    cursor: pointer;
+}
+a:hover {
+    color: #0ea5e9;
+}
+
+/* 表单切换样式（新增） */
+.form-box { display: none; }
+.form-box.active { display: block; }
