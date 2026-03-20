@@ -127,16 +127,20 @@
         <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="space-y-2">
             <label class="text-xs text-slate-400">模型名称</label>
-            <input type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: YOLOv8n-目标检测">
+            <label>
+              <input type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: YOLOv8n-目标检测">
+            </label>
           </div>
           <div class="space-y-2">
             <label class="text-xs text-slate-400">部署设备</label>
-            <select class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
-              <option value="">选择部署设备</option>
-              <option value="gateway-01">边缘网关-01</option>
-              <option value="camera-02">PTZ摄像头-02</option>
-              <option value="sensor-04">传感器节点-04</option>
-            </select>
+            <label>
+              <select class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
+                <option value="">选择部署设备</option>
+                <option value="gateway-01">边缘网关-01</option>
+                <option value="camera-02">PTZ摄像头-02</option>
+                <option value="sensor-04">传感器节点-04</option>
+              </select>
+            </label>
           </div>
           <div class="space-y-2">
             <label class="text-xs text-slate-400">模型文件</label>
@@ -144,7 +148,9 @@
           </div>
           <div class="md:col-span-3 space-y-2">
             <label class="text-xs text-slate-400">模型描述（可选）</label>
-            <textarea class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none h-16 resize-none" placeholder="描述模型用途、适用场景、版本信息等..."></textarea>
+            <label>
+              <textarea class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none h-16 resize-none" placeholder="描述模型用途、适用场景、版本信息等..."></textarea>
+            </label>
           </div>
           <div class="md:col-span-3 flex justify-end">
             <button type="button" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-bold transition-colors">
@@ -166,8 +172,13 @@
         </div>
         <div class="flex gap-3">
           <div class="flex bg-slate-800/80 rounded-lg p-1">
-            <button class="model-sub-tab active px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors text-white bg-cyan-600/80">训练曲线</button>
-            <button class="model-sub-tab px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors">指标汇总</button>
+            <label>
+              <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
+              <option value="yolov8n">YOLOv8n - 目标检测</option>
+              <option value="cnn">CNN - 环境异常检测</option>
+              <option value="transformer">Transformer - 行为分析</option>
+              </select>
+            </label>
           </div>
           <button class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1">
             <span class="iconify" data-icon="solar:refresh-bold"></span>刷新数据
@@ -331,11 +342,13 @@
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold text-cyan-400">模型效果实时演示</h3>
         <div class="flex gap-3">
-          <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
-            <option value="yolov8n">YOLOv8n - 目标检测</option>
-            <option value="cnn">CNN - 环境异常检测</option>
-            <option value="transformer">Transformer - 行为分析</option>
-          </select>
+          <label>
+            <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
+              <option value="yolov8n">YOLOv8n - 目标检测</option>
+              <option value="cnn">CNN - 环境异常检测</option>
+              <option value="transformer">Transformer - 行为分析</option>
+            </select>
+          </label>
           <button class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition-all">
             <span class="iconify mr-1" data-icon="solar:camera-bold"></span>切换摄像头
           </button>
@@ -376,7 +389,9 @@
             </div>
             <div>
               <label class="text-xs text-slate-400 block mb-2">置信度阈值</label>
-              <input type="range" min="0.1" max="0.9" step="0.05" value="0.5" class="w-full accent-cyan-500">
+              <label>
+                <input type="range" min="0.1" max="0.9" step="0.05" value="0.5" class="w-full accent-cyan-500">
+              </label>
               <div class="flex justify-between text-xs text-slate-400 mt-1">
                 <span>0.1</span>
                 <span>当前: 0.5</span>
