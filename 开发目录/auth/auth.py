@@ -9,7 +9,9 @@ auth = Blueprint('auth', __name__)
 
 # ===== 以下是新增配置 =====
 # 用户数据保存到 父级目录的 users.json
-USER_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "users.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 开发目录
+JSON_DIR = os.path.join(BASE_DIR, 'log')
+USER_FILE = os.path.join(JSON_DIR, "user.json")
 
 
 # ===== 以下是新增工具函数 =====
