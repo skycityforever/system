@@ -2,450 +2,149 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>极境守护 - 设备与摄像头管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>极境守护 - 设备管理</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
-<style>
-    .glass-panel { background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(12px); border: 1px solid rgba(56, 189, 248, 0.2); }
-    body { background-color: #020617; color: #e2e8f0; }
-    .status-pulse { position: relative; }
-    .status-pulse::after {
-        content: ""; position: absolute; width: 100%; height: 100%; top: 0; left: 0; border-radius: 50%;
-        background: inherit; opacity: 0.6; animation: pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-    }
-    @keyframes pulse { to { transform: scale(2.5); opacity: 0; } }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fadeIn {
-        animation: fadeIn 0.3s ease-out forwards;
-    }
-</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="/开发目录/static/edge_device_management.css">
 </head>
+
 <body class="min-h-screen">
-<nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
-<div class="flex items-center gap-3">
-<span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
-<span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">设备中心</span></span>
-</div>
-<div class="flex items-center gap-8 text-sm">
-<a class="hover:text-cyan-400" href="#">目标检测</a>
-<a class="hover:text-cyan-400" href="#">监控中心</a>
-<a class="hover:text-cyan-400" href="#">历史溯源</a>
-<a class="hover:text-cyan-400" href="#">数据分析</a>
-<a class="hover:text-cyan-400" href="#">模型管理</a>
-<a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="edge_device_management.html">设备管理</a>
-<a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4" href="#"><span class="iconify" data-icon="solar:user-bold"></span></a>
-</div>
-</nav>
-<main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto">
-<div class="flex justify-between items-end mb-8">
-<div>
-<h2 class="text-2xl font-bold mb-2">全站节点拓扑</h2>
-<div class="flex gap-4 text-sm flex-wrap">
-<span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-green-500 status-pulse"></span> 在线: 124 节点</span>
-<span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-red-500"></span> 异常: 2 节点</span>
-<span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> 自热开启中: 12</span>
-<span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-slate-500"></span> 离线: 10 节点</span>
-</div>
-</div>
-<div class="flex gap-3">
-<div class="relative">
-<span class="iconify absolute left-3 top-3 text-slate-500" data-icon="solar:magnifer-linear"></span>
-<input class="bg-slate-900 border border-slate-700 pl-10 pr-4 py-2 rounded-lg text-sm w-64 focus:border-cyan-500 outline-none" placeholder="搜索设备 ID / 位置..." type="text"/>
-</div>
-<button id="initNewNodeBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all">+ 初始化新节点</button>
-</div>
-</div>
 
-<!-- 动态卡片容器（默认展示4种状态模板） -->
-<div id="deviceCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-  <!-- 1. 在线（Stable）模板 -->
-  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group">
-    <div class="h-44 bg-slate-800 relative">
-      <img alt="Camera view preview" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
-      <div class="absolute top-3 left-3 flex gap-2">
-        <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
-        <span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <h4 class="font-bold text-lg leading-none">NORTH-GATE-04</h4>
-          <p class="text-xs text-slate-500 mt-2">IP: 192.168.10.104</p>
-        </div>
-        <span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Stable</span>
-      </div>
-      <div class="grid grid-cols-2 gap-4 my-4">
-        <div class="text-xs space-y-1">
-          <p class="text-slate-500">机身温度</p>
-          <p class="font-mono text-cyan-400">42.5 °C (已加热)</p>
-        </div>
-        <div class="text-xs space-y-1">
-          <p class="text-slate-500">CPU 负载</p>
-          <p class="font-mono text-cyan-400">12%</p>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <button class="flex-1 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs">调整预览</button>
-        <button class="w-10 bg-slate-800 hover:bg-cyan-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:compass-bold"></span></button>
-        <button class="w-10 bg-slate-800 hover:bg-red-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:restart-bold"></span></button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. 异常（Error）模板 -->
-  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-red-500/50">
-    <div class="h-44 bg-slate-800 relative">
-      <img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
-      <div class="absolute inset-0 flex items-center justify-center">
-        <span class="iconify text-4xl text-red-500 animate-pulse" data-icon="solar:close-circle-bold"></span>
-      </div>
-      <div class="absolute top-3 left-3 flex gap-2">
-        <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
-        <span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <h4 class="font-bold text-lg leading-none">FAULT-NODE-01</h4>
-          <p class="text-xs text-slate-500 mt-2">连接中断</p>
-        </div>
-        <span class="bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Error</span>
-      </div>
-      <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-red-500 border border-red-500/20 mb-4">
-        错误: 设备连接异常，无法获取实时数据。
-      </div>
-      <div class="flex gap-2">
-        <button class="flex-1 bg-red-600 text-white p-2 rounded text-xs font-bold">排查故障</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. 维护中（Unstable）模板 -->
-  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-yellow-500/50">
-    <div class="h-44 bg-slate-800 relative">
-      <img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/7f6a14904d7f49b0a5aa9788d772a5ae.jpg"/>
-      <div class="absolute inset-0 flex items-center justify-center">
-        <span class="iconify text-4xl text-yellow-500 animate-pulse" data-icon="solar:danger-bold"></span>
-      </div>
-      <div class="absolute top-3 left-3 flex gap-2">
-        <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
-        <span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <h4 class="font-bold text-lg leading-none">ROOF-TOP-SENSE</h4>
-          <p class="text-xs text-slate-500 mt-2">信号强度弱 (15%)</p>
-        </div>
-        <span class="bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Unstable</span>
-      </div>
-      <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-yellow-500 border border-yellow-500/20 mb-4">
-        警告: 极端大风环境导致微波链路抖动，正在重试。
-      </div>
-      <div class="flex gap-2">
-        <button class="flex-1 bg-yellow-600 text-white p-2 rounded text-xs font-bold">尝试重连</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. 离线（Offline）模板 -->
-  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group grayscale">
-    <div class="h-44 bg-slate-800 relative">
-      <div class="absolute inset-0 flex items-center justify-center bg-black/80">
-        <span class="text-xs font-mono text-slate-600 tracking-widest">OFFLINE</span>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <h4 class="font-bold text-lg leading-none text-slate-500">BACK-GATE-B</h4>
-          <p class="text-xs text-slate-500 mt-2">掉线于 04:12</p>
-        </div>
-        <span class="bg-slate-700 text-slate-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Offline</span>
-      </div>
-      <div class="flex gap-2 mt-4">
-        <button class="flex-1 bg-slate-800 text-slate-500 p-2 rounded text-xs cursor-not-allowed">设备诊断</button>
-      </div>
-    </div>
-  </div>
-</div>
-</main>
-
-<!-- 边缘设备信息登记弹窗 -->
-<div id="deviceRegisterModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-  <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 relative animate-fadeIn">
-    <!-- 关闭按钮 -->
-    <button id="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+<!-- 告警容器 -->
+<div class="alert-container" id="alertContainer"></div>
+<!-- 侧边栏遮罩 -->
+<div class="overlay" id="sidebarOverlay"></div>
+<!-- 设备详情侧边栏 -->
+<div class="sidebar" id="deviceSidebar">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-xl font-bold text-cyan-400" id="sidebarDeviceTitle">设备详情</h3>
+    <button id="closeSidebar" class="text-slate-400 hover:text-white transition-colors">
       <span class="iconify text-xl" data-icon="solar:close-circle-bold"></span>
     </button>
+  </div>
+  <div class="mb-6 border-b border-slate-700 pb-4">
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div><p class="text-xs text-slate-400">设备ID</p><p class="font-medium" id="sidebarDeviceId"></p></div>
+      <div><p class="text-xs text-slate-400">状态</p><p class="font-medium" id="sidebarDeviceStatus"></p></div>
+      <div><p class="text-xs text-slate-400">IP地址</p><p class="font-medium" id="sidebarDeviceIp"></p></div>
+      <div><p class="text-xs text-slate-400">设备类型</p><p class="font-medium" id="sidebarDeviceType"></p></div>
+      <div><p class="text-xs text-slate-400">安装位置</p><p class="font-medium" id="sidebarDeviceLocation"></p></div>
+      <div><p class="text-xs text-slate-400">运行环境</p><p class="font-medium" id="sidebarDeviceEnv"></p></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><p class="text-xs text-slate-400">激活时间</p><p class="font-medium" id="sidebarDeviceActiveTime"></p></div>
+      <div><p class="text-xs text-slate-400">累计运行</p><p class="font-medium" id="sidebarDeviceRuntime"></p></div>
+      <div><p class="text-xs text-slate-400">固件版本</p><p class="font-medium" id="sidebarDeviceVersion"></p></div>
+      <div><p class="text-xs text-slate-400">SN序列号</p><p class="font-medium" id="sidebarDeviceSn"></p></div>
+    </div>
+  </div>
+  <div class="mb-6 border-b border-slate-700 pb-4">
+    <h4 class="text-lg font-medium mb-3">实时数据监控</h4>
+    <div class="h-64 mb-3"><canvas id="deviceDataChart"></canvas></div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-slate-800/50 p-2 rounded"><p class="text-xs text-slate-400">当前温度</p><p class="text-lg font-mono text-cyan-400" id="sidebarTemp"></p></div>
+      <div class="bg-slate-800/50 p-2 rounded"><p class="text-xs text-slate-400">CPU负载</p><p class="text-lg font-mono text-cyan-400" id="sidebarCpu"></p></div>
+      <div class="bg-slate-800/50 p-2 rounded"><p class="text-xs text-slate-400">信号强度</p><p class="text-lg font-mono text-cyan-400" id="sidebarSignal"></p></div>
+    </div>
+  </div>
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-3"><h4 class="text-lg font-medium">运维记录</h4><button class="text-xs bg-cyan-600/80 hover:bg-cyan-600 px-2 py-1 rounded">查看全部</button></div>
+    <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+      <div class="bg-slate-800/30 p-2 rounded text-sm"><div class="flex justify-between"><span class="text-green-400">✅ 故障修复</span><span class="text-slate-400 text-xs">2026-03-19 14:30</span></div><p class="text-xs mt-1 text-slate-300">网络连接异常已修复，恢复正常运行</p></div>
+      <div class="bg-slate-800/30 p-2 rounded text-sm"><div class="flex justify-between"><span class="text-yellow-400">⚠️ 维护操作</span><span class="text-slate-400 text-xs">2026-03-18 09:15</span></div><p class="text-xs mt-1 text-slate-300">固件升级至v2.4.8版本</p></div>
+      <div class="bg-slate-800/30 p-2 rounded text-sm"><div class="flex justify-between"><span class="text-red-400">❌ 设备告警</span><span class="text-slate-400 text-xs">2026-03-17 22:45</span></div><p class="text-xs mt-1 text-slate-300">温度超过阈值(50°C)，触发高温告警</p></div>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <button class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded text-sm">远程重启</button>
+    <button class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded text-sm">导出报告</button>
+  </div>
+</div>
 
-    <!-- 标题 -->
+<nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
+  <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">设备中心</span></span></div>
+  <div class="flex items-center gap-8 text-sm">
+    <a class="hover:text-cyan-400" href="#">目标检测</a><a class="hover:text-cyan-400" href="#">监控中心</a><a class="hover:text-cyan-400" href="#">历史溯源</a><a class="hover:text-cyan-400" href="#">数据分析</a><a class="hover:text-cyan-400" href="#">模型管理</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="edge_device_management.html">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="#"><span class="iconify" data-icon="solar:user-bold"></span><span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span></a>
+  </div>
+</nav>
+
+<main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto">
+  <div class="flex justify-between items-end mb-8">
+    <div>
+      <h2 class="text-2xl font-bold mb-2">全站节点拓扑</h2>
+      <div class="flex gap-4 text-sm flex-wrap">
+        <span id="onlineStat" class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-green-500 status-pulse"></span> 在线: 124 节点</span>
+        <span id="errorStat" class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-red-500"></span> 异常: 2 节点</span>
+        <span id="maintenanceStat" class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> 自热开启中: 12</span>
+        <span id="offlineStat" class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-slate-500"></span> 离线: 10 节点</span>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <div class="relative"><span class="iconify absolute left-3 top-3 text-slate-500" data-icon="solar:magnifer-linear"></span><input id="searchInput" class="bg-slate-900 border border-slate-700 pl-10 pr-4 py-2 rounded-lg text-sm w-64 focus:border-cyan-500 outline-none" placeholder="搜索设备 ID / 位置..." type="text"/></div>
+      <button id="initNewNodeBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all">+ 初始化新节点</button>
+    </div>
+  </div>
+
+  <div id="deviceCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <!-- 在线设备卡片 -->
+    <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group device-card" data-device-id="NORTH-GATE-04" data-location="北门" data-environment="extreme_cold" data-status="online" data-ip="192.168.10.104" data-type="ptz_camera" data-active-time="2026-03-20 09:00:00" data-runtime="1248" data-version="v2.4.8" data-sn="POLAR-20260320-004">
+      <div class="h-44 bg-slate-800 relative"><img alt="Camera view preview" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/><div class="absolute top-3 left-3 flex gap-2"><span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span><span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span></div></div>
+      <div class="p-5"><div class="flex justify-between items-start mb-3"><div><h4 class="font-bold text-lg leading-none">NORTH-GATE-04</h4><p class="text-xs text-slate-500 mt-2">IP: 192.168.10.104</p></div><span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Stable</span></div>
+        <div class="grid grid-cols-2 gap-4 my-4"><div class="text-xs space-y-1"><p class="text-slate-500">机身温度</p><p class="font-mono text-cyan-400">42.5 °C (已加热)</p></div><div class="text-xs space-y-1"><p class="text-slate-500">CPU 负载</p><p class="font-mono text-cyan-400">12%</p></div></div>
+        <div class="flex gap-2"><button class="flex-1 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs preview-btn" data-device-id="NORTH-GATE-04" data-device-name="NORTH-GATE-04" data-ip="192.168.10.104" data-status="online" data-device-type="ptz_camera" data-environment="极端低温" data-location="北门">调整预览</button><button class="w-10 bg-slate-800 hover:bg-cyan-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:compass-bold"></span></button><button class="w-10 bg-slate-800 hover:bg-red-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:restart-bold"></span></button></div>
+      </div>
+    </div>
+    <!-- 异常设备卡片 -->
+    <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-red-500/50 device-card" data-device-id="FAULT-NODE-01" data-location="中控室" data-environment="complex_hybrid_env" data-status="error" data-ip="192.168.10.001" data-type="ptz_camera" data-active-time="2026-03-15 10:20:00" data-runtime="987" data-version="v2.4.7" data-sn="POLAR-20260315-001">
+      <div class="h-44 bg-slate-800 relative"><img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/><div class="absolute inset-0 flex items-center justify-center"><span class="iconify text-4xl text-red-500 animate-pulse" data-icon="solar:close-circle-bold"></span></div><div class="absolute top-3 left-3 flex gap-2"><span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span><span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span></div></div>
+      <div class="p-5"><div class="flex justify-between items-start mb-3"><div><h4 class="font-bold text-lg leading-none">FAULT-NODE-01</h4><p class="text-xs text-slate-500 mt-2">连接中断</p></div><span class="bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Error</span></div>
+        <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-red-500 border border-red-500/20 mb-4">错误: 设备连接异常，无法获取实时数据。</div>
+        <div class="flex gap-2"><button class="flex-1 bg-red-600 text-white p-2 rounded text-xs font-bold fix-error-btn" data-device-id="FAULT-NODE-01">排查故障</button></div>
+      </div>
+    </div>
+    <!-- 维护中设备卡片 -->
+    <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-yellow-500/50 device-card" data-device-id="ROOF-TOP-SENSE" data-location="屋顶" data-environment="strong_wind" data-status="maintenance" data-ip="192.168.10.002" data-type="ptz_camera" data-active-time="2026-03-10 14:10:00" data-runtime="765" data-version="v2.4.8" data-sn="POLAR-20260310-002">
+      <div class="h-44 bg-slate-800 relative"><img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/7f6a14904d7f49b0a5aa9788d772a5ae.jpg"/><div class="absolute inset-0 flex items-center justify-center"><span class="iconify text-4xl text-yellow-500 animate-pulse" data-icon="solar:danger-bold"></span></div><div class="absolute top-3 left-3 flex gap-2"><span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span><span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span></div></div>
+      <div class="p-5"><div class="flex justify-between items-start mb-3"><div><h4 class="font-bold text-lg leading-none">ROOF-TOP-SENSE</h4><p class="text-xs text-slate-500 mt-2">信号强度弱 (15%)</p></div><span class="bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Unstable</span></div>
+        <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-yellow-500 border border-yellow-500/20 mb-4">警告: 极端大风环境导致微波链路抖动，正在重试。</div>
+        <div class="flex gap-2"><button class="flex-1 bg-yellow-600 text-white p-2 rounded text-xs font-bold reconnect-btn" data-device-id="ROOF-TOP-SENSE">尝试重连</button></div>
+      </div>
+    </div>
+    <!-- 离线设备卡片 -->
+    <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group grayscale device-card" data-device-id="BACK-GATE-B" data-location="后门" data-environment="extreme_cold" data-status="offline" data-ip="192.168.10.003" data-type="fixed_camera" data-active-time="2026-03-05 08:30:00" data-runtime="543" data-version="v2.4.6" data-sn="POLAR-20260305-003">
+      <div class="h-44 bg-slate-800 relative"><div class="absolute inset-0 flex items-center justify-center bg-black/80"><span class="text-xs font-mono text-slate-600 tracking-widest">OFFLINE</span></div></div>
+      <div class="p-5"><div class="flex justify-between items-start mb-3"><div><h4 class="font-bold text-lg leading-none text-slate-500">BACK-GATE-B</h4><p class="text-xs text-slate-500 mt-2">掉线于 04:12</p></div><span class="bg-slate-700 text-slate-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Offline</span></div>
+        <div class="flex gap-2 mt-4"><button class="flex-1 bg-slate-800 text-slate-500 p-2 rounded text-xs cursor-not-allowed diagnose-btn" data-device-id="BACK-GATE-B">设备诊断</button></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 设备注册弹窗 -->
+<div id="deviceRegisterModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+  <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 relative animate-fadeIn">
+    <button id="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"><span class="iconify text-xl" data-icon="solar:close-circle-bold"></span></button>
     <h3 class="text-xl font-bold text-cyan-400 mb-6">初始化边缘设备节点</h3>
-
-    <!-- 表单 -->
     <form id="deviceRegisterForm" class="space-y-5">
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">设备 ID</label>
-          <input type="text" name="device_id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: NORTH-GATE-05" required>
-        </div>
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">设备名称</label>
-          <input type="text" name="device_name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: 北门摄像头" required>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">IP 地址</label>
-          <input type="text" name="ip_address" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="192.168.10.xxx" required>
-        </div>
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">设备类型</label>
-          <select name="device_type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required>
-            <option value="ptz_camera">PTZ 摄像头</option>
-            <option value="fixed_camera">固定摄像头</option>
-            <option value="sensor">环境传感器</option>
-            <option value="edge_gateway">边缘网关</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">安装位置</label>
-          <input type="text" name="location" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: 北门/屋顶" required>
-        </div>
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">运行环境</label>
-          <select name="environment" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required>
-            <option value="extreme_cold">极端低温</option>
-            <option value="extreme_hot">极端高温</option>
-            <option value="strong_wind">强风</option>
-            <option value="rainstorm">暴雨</option>
-            <option value="dark">黑暗</option>
-            <option value="complex_hybrid_env">复杂混合环境</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="space-y-2">
-        <label class="text-xs text-slate-400">设备描述（可选）</label>
-        <textarea name="description" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none h-20 resize-none" placeholder="备注设备用途或特殊配置..."></textarea>
-      </div>
-
-      <!-- 新增：激活时间、使用时间、设备状态 -->
-      <div class="grid grid-cols-3 gap-4">
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">激活时间</label>
-          <input type="text" name="activate_time" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-400" readonly>
-        </div>
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">累计使用时间（小时）</label>
-          <input type="number" name="total_usage_hours" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" value="0" min="0" required>
-        </div>
-        <div class="space-y-2">
-          <label class="text-xs text-slate-400">设备状态</label>
-          <select name="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required>
-            <option value="online">在线</option>
-            <option value="offline">离线</option>
-            <option value="maintenance">维护中</option>
-            <option value="error">异常</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 按钮组 -->
-      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
-        <button type="button" id="cancelBtn" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition-colors">取消</button>
-        <button type="submit" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-bold transition-colors">提交注册</button>
-      </div>
+      <div class="grid grid-cols-2 gap-4"><div class="space-y-2"><label class="text-xs text-slate-400">设备 ID</label><input type="text" name="device_id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: NORTH-GATE-05" required></div><div class="space-y-2"><label class="text-xs text-slate-400">设备名称</label><input type="text" name="device_name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: 北门摄像头" required></div></div>
+      <div class="grid grid-cols-2 gap-4"><div class="space-y-2"><label class="text-xs text-slate-400">IP 地址</label><input type="text" name="ip_address" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="192.168.10.xxx" required></div><div class="space-y-2"><label class="text-xs text-slate-400">设备类型</label><select name="device_type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required><option value="ptz_camera">PTZ 摄像头</option><option value="fixed_camera">固定摄像头</option><option value="sensor">环境传感器</option><option value="edge_gateway">边缘网关</option></select></div></div>
+      <div class="grid grid-cols-2 gap-4"><div class="space-y-2"><label class="text-xs text-slate-400">安装位置</label><input type="text" name="location" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: 北门/屋顶" required></div><div class="space-y-2"><label class="text-xs text-slate-400">运行环境</label><select name="environment" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required><option value="extreme_cold">极端低温</option><option value="extreme_hot">极端高温</option><option value="strong_wind">强风</option><option value="rainstorm">暴雨</option><option value="dark">黑暗</option><option value="complex_hybrid_env">复杂混合环境</option></select></div></div>
+      <div class="space-y-2"><label class="text-xs text-slate-400">设备描述（可选）</label><textarea name="description" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none h-20 resize-none" placeholder="备注设备用途或特殊配置..."></textarea></div>
+      <div class="grid grid-cols-3 gap-4"><div class="space-y-2"><label class="text-xs text-slate-400">激活时间</label><input type="text" name="activate_time" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-400" readonly></div><div class="space-y-2"><label class="text-xs text-slate-400">累计使用时间（小时）</label><input type="number" name="total_usage_hours" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" value="0" min="0" required></div><div class="space-y-2"><label class="text-xs text-slate-400">设备状态</label><select name="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" required><option value="online">在线</option><option value="offline">离线</option><option value="maintenance">维护中</option><option value="error">异常</option></select></div></div>
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700"><button type="button" id="cancelBtn" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition-colors">取消</button><button type="submit" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-bold transition-colors">提交注册</button></div>
     </form>
   </div>
 </div>
 
-<script>
-  // 获取 DOM 元素
-  const modal = document.getElementById('deviceRegisterModal');
-  const openBtn = document.getElementById('initNewNodeBtn');
-  const closeBtn = document.getElementById('closeModal');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const form = document.getElementById('deviceRegisterForm');
-  const cardContainer = document.getElementById('deviceCardsContainer');
+<!-- 预览弹窗 -->
+<div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+  <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 relative animate-fadeIn"><button id="closePreviewModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"><span class="iconify text-xl" data-icon="solar:close-circle-bold"></span></button><div id="previewCardContent" class="mt-4"></div></div>
+</div>
 
-  // 打开弹窗
-  openBtn.addEventListener('click', () => {
-    modal.classList.remove('hidden');
-    // 自动填充当前时间为激活时间
-    const now = new Date();
-    const activateTime = now.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    document.querySelector('input[name="activate_time"]').value = activateTime;
-  });
-
-  // 关闭弹窗
-  function closeModal() {
-    modal.classList.add('hidden');
-    form.reset(); // 重置表单
-  }
-
-  closeBtn.addEventListener('click', closeModal);
-  cancelBtn.addEventListener('click', closeModal);
-
-  // 点击模态框外部关闭
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
-
-  // 动态生成设备卡片核心函数
-  function createDeviceCard(deviceData) {
-    const card = document.createElement('div');
-
-    // 根据设备状态设置样式
-    let statusClass = '';
-    let statusText = '';
-    let cardClass = 'glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group';
-
-    if (deviceData.status === 'online') {
-      statusClass = 'bg-green-500/20 text-green-500';
-      statusText = 'Stable';
-    } else if (deviceData.status === 'offline') {
-      statusClass = 'bg-slate-700 text-slate-500';
-      statusText = 'Offline';
-      cardClass += ' grayscale';
-    } else if (deviceData.status === 'maintenance') {
-      statusClass = 'bg-yellow-500/20 text-yellow-500';
-      statusText = 'Unstable';
-      cardClass += ' border-yellow-500/50';
-    } else if (deviceData.status === 'error') {
-      statusClass = 'bg-red-500/20 text-red-500';
-      statusText = 'Error';
-      cardClass += ' border-red-500/50';
-    }
-
-    // 卡片HTML模板
-    card.className = cardClass;
-    card.innerHTML = `
-      <div class="h-44 bg-slate-800 relative">
-        ${deviceData.status === 'offline' ? `
-          <div class="absolute inset-0 flex items-center justify-center bg-black/80">
-            <span class="text-xs font-mono text-slate-600 tracking-widest">OFFLINE</span>
-          </div>
-        ` : `
-          <img alt="Camera view preview" class="w-full h-full object-cover ${deviceData.status === 'maintenance' || deviceData.status === 'error' ? 'opacity-30 grayscale' : ''}"
-            src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
-          ${deviceData.status === 'maintenance' ? `
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span class="iconify text-4xl text-yellow-500 animate-pulse" data-icon="solar:danger-bold"></span>
-            </div>
-          ` : deviceData.status === 'error' ? `
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span class="iconify text-4xl text-red-500 animate-pulse" data-icon="solar:close-circle-bold"></span>
-            </div>
-          ` : ''}
-          <div class="absolute top-3 left-3 flex gap-2">
-            <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
-            ${deviceData.device_type === 'ptz_camera' ? '<span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>' : ''}
-          </div>
-        `}
-      </div>
-      <div class="p-5">
-        <div class="flex justify-between items-start mb-3">
-          <div>
-            <h4 class="font-bold text-lg leading-none ${deviceData.status === 'offline' ? 'text-slate-500' : ''}">${deviceData.device_id}</h4>
-            <p class="text-xs text-slate-500 mt-2">IP: ${deviceData.ip_address}</p>
-          </div>
-          <span class="${statusClass} px-2 py-0.5 rounded text-[10px] uppercase font-bold">${statusText}</span>
-        </div>
-        ${deviceData.status !== 'offline' ? `
-          <div class="grid grid-cols-2 gap-4 my-4">
-            <div class="text-xs space-y-1">
-              <p class="text-slate-500">机身温度</p>
-              <p class="font-mono text-cyan-400">${Math.floor(Math.random() * 20 + 30)}.${Math.floor(Math.random() * 10)} °C ${deviceData.environment === 'extreme_cold' ? '(已加热)' : ''}</p>
-            </div>
-            <div class="text-xs space-y-1">
-              <p class="text-slate-500">CPU 负载</p>
-              <p class="font-mono text-cyan-400">${Math.floor(Math.random() * 20 + 10)}%</p>
-            </div>
-          </div>
-        ` : `
-          <div class="flex gap-2 mt-4">
-            <button class="flex-1 bg-slate-800 text-slate-500 p-2 rounded text-xs cursor-not-allowed">设备诊断</button>
-          </div>
-        `}
-        ${deviceData.status === 'online' ? `
-          <div class="flex gap-2">
-            <button class="flex-1 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs">调整预览</button>
-            <button class="w-10 bg-slate-800 hover:bg-cyan-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:compass-bold"></span></button>
-            <button class="w-10 bg-slate-800 hover:bg-red-600 p-2 rounded flex items-center justify-center transition-colors"><span class="iconify" data-icon="solar:restart-bold"></span></button>
-          </div>
-        ` : deviceData.status === 'maintenance' ? `
-          <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-yellow-500 border border-yellow-500/20 mb-4">
-            警告: 极端环境导致设备链路抖动，正在重试。
-          </div>
-          <div class="flex gap-2">
-            <button class="flex-1 bg-yellow-600 text-white p-2 rounded text-xs font-bold">尝试重连</button>
-          </div>
-        ` : deviceData.status === 'error' ? `
-          <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-red-500 border border-red-500/20 mb-4">
-            错误: 设备连接异常，无法获取实时数据。
-          </div>
-          <div class="flex gap-2">
-            <button class="flex-1 bg-red-600 text-white p-2 rounded text-xs font-bold">排查故障</button>
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    // 添加到容器末尾
-    cardContainer.appendChild(card);
-  }
-
-  // 表单提交处理
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const deviceData = Object.fromEntries(formData.entries());
-    console.log('提交的设备信息:', deviceData);
-
-    // 发送到后端 Flask 接口
-    fetch('http://localhost:5000/api/device/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(deviceData),
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert('设备节点初始化成功！\n设备 ID: ' + deviceData.device_id);
-        createDeviceCard(deviceData);
-        closeModal();
-      } else {
-        alert('设备注册失败：' + data.msg);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('网络错误，设备注册失败！\n已本地渲染设备卡片');
-      createDeviceCard(deviceData);
-      closeModal();
-    });
-  });
-</script>
+<script src="/开发目录/static/edge_device_management.js"></script>
 </body>
 </html>
