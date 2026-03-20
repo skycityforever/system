@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>极境守护 - 模型管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="/开发目录/static/edge_device_management.css">
+</head>
+
+<body class="min-h-screen">
+<!-- 告警容器 -->
+<div class="alert-container" id="alertContainer"></div>
+
+<!-- 导航栏 -->
+<nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
+  <div class="flex items-center gap-3">
+    <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
+    <span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">模型中心</span></span>
+  </div>
+  <div class="flex items-center gap-8 text-sm">
+    <a class="hover:text-cyan-400" href="#">目标检测</a>
+    <a class="hover:text-cyan-400" href="#">监控中心</a>
+    <a class="hover:text-cyan-400" href="#">历史溯源</a>
+    <a class="hover:text-cyan-400" href="#">数据分析</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="model_management.html">模型管理</a>
+    <a class="hover:text-cyan-400" href="edge_device_management.html">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="user_center.html">
+      <span class="iconify" data-icon="solar:user-bold"></span>
+      <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+    </a>
+  </div>
+</nav>
+
+<!-- 主内容区 -->
+<main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto">
+  <!-- 页面标题 + 子版块导航 -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+    <div>
+      <h2 class="text-2xl font-bold mb-2">模型全生命周期管理</h2>
+      <p class="text-sm text-slate-400">支持模型加载、训练监控、指标分析、效果演示全流程管理</p>
+    </div>
+    <div class="flex gap-2 bg-slate-800/80 rounded-lg p-1">
+      <a href="#model-load" class="model-tab px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors">模型加载</a>
+      <a href="#training-curve" class="model-tab active px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors bg-cyan-600/80 text-white">训练曲线</a>
+      <a href="#training-metrics" class="model-tab px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors">训练指标</a>
+      <a href="#model-demo" class="model-tab px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors">模型演示</a>
+    </div>
+  </div>
+
+  <!-- 模型加载子版块 -->
+  <section id="model-load" class="model-section hidden">
+    <div class="glass-panel rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-cyan-400">模型加载与部署</h3>
+        <button class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">
+          <span class="iconify mr-1" data-icon="solar:upload-bold"></span>上传模型文件
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold">YOLOv8n - 目标检测</h4>
+              <p class="text-xs text-slate-400 mt-1">版本: v1.0.2 | 大小: 6.2MB</p>
+            </div>
+            <span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">已加载</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div><p class="text-slate-400">部署设备</p><p class="font-medium">边缘网关-01</p></div>
+            <div><p class="text-slate-400">加载时间</p><p class="font-medium">2026-03-20 10:15</p></div>
+            <div><p class="text-slate-400">推理耗时</p><p class="font-medium">18ms/帧</p></div>
+            <div><p class="text-slate-400">精度</p><p class="font-medium">92.5%</p></div>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs">重启模型</button>
+            <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs">卸载</button>
+          </div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold">CNN - 环境异常检测</h4>
+              <p class="text-xs text-slate-400 mt-1">版本: v2.1.0 | 大小: 3.8MB</p>
+            </div>
+            <span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">已加载</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div><p class="text-slate-400">部署设备</p><p class="font-medium">传感器节点-04</p></div>
+            <div><p class="text-slate-400">加载时间</p><p class="font-medium">2026-03-20 09:30</p></div>
+            <div><p class="text-slate-400">推理耗时</p><p class="font-medium">8ms/帧</p></div>
+            <div><p class="text-slate-400">精度</p><p class="font-medium">89.8%</p></div>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs">重启模型</button>
+            <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs">卸载</button>
+          </div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold">Transformer - 行为分析</h4>
+              <p class="text-xs text-slate-400 mt-1">版本: v0.8.1 | 大小: 12.5MB</p>
+            </div>
+            <span class="bg-slate-700 text-slate-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">未加载</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div><p class="text-slate-400">目标设备</p><p class="font-medium">PTZ摄像头-02</p></div>
+            <div><p class="text-slate-400">依赖环境</p><p class="font-medium">Python 3.9 + Torch 2.1</p></div>
+            <div><p class="text-slate-400">预估耗时</p><p class="font-medium">45ms/帧</p></div>
+            <div><p class="text-slate-400">预估精度</p><p class="font-medium">94.2%</p></div>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white p-2 rounded text-xs">加载模型</button>
+            <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs">查看详情</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-700">
+        <h4 class="font-medium mb-4">上传新模型</h4>
+        <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400">模型名称</label>
+            <input type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none" placeholder="如: YOLOv8n-目标检测">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400">部署设备</label>
+            <select class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
+              <option value="">选择部署设备</option>
+              <option value="gateway-01">边缘网关-01</option>
+              <option value="camera-02">PTZ摄像头-02</option>
+              <option value="sensor-04">传感器节点-04</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400">模型文件</label>
+            <input type="file" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none file:bg-slate-700 file:px-2 file:py-1 file:rounded file:text-xs">
+          </div>
+          <div class="md:col-span-3 space-y-2">
+            <label class="text-xs text-slate-400">模型描述（可选）</label>
+            <textarea class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none h-16 resize-none" placeholder="描述模型用途、适用场景、版本信息等..."></textarea>
+          </div>
+          <div class="md:col-span-3 flex justify-end">
+            <button type="button" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-bold transition-colors">
+              <span class="iconify mr-1" data-icon="solar:cloud-upload-bold"></span>上传并加载
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 训练曲线子版块（含4张图） -->
+  <section id="training-curve" class="model-section active">
+    <div class="glass-panel rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+          <h3 class="text-xl font-bold text-cyan-400">训练结果可视化</h3>
+          <span class="text-xs text-slate-400">数据来源: results.csv 及训练图表</span>
+        </div>
+        <div class="flex gap-3">
+          <div class="flex bg-slate-800/80 rounded-lg p-1">
+            <button class="model-sub-tab active px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors text-white bg-cyan-600/80">训练曲线</button>
+            <button class="model-sub-tab px-4 py-2 rounded text-sm hover:bg-cyan-600/80 transition-colors">指标汇总</button>
+          </div>
+          <button class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1">
+            <span class="iconify" data-icon="solar:refresh-bold"></span>刷新数据
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 训练损失曲线 -->
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-cyan-500/30">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <h4 class="text-sm font-medium text-cyan-400">训练损失</h4>
+          </div>
+          <h5 class="text-center text-slate-300 text-sm mb-2">训练损失曲线</h5>
+          <div class="h-64">
+            <canvas id="trainLossChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 验证损失曲线 -->
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-cyan-500/30">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <h4 class="text-sm font-medium text-cyan-400">验证损失</h4>
+          </div>
+          <h5 class="text-center text-slate-300 text-sm mb-2">验证损失曲线</h5>
+          <div class="h-64">
+            <canvas id="valLossChart"></canvas>
+          </div>
+        </div>
+
+        <!-- mAP 指标曲线 -->
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-purple-500/30">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+            <h4 class="text-sm font-medium text-purple-400">mAP 指标</h4>
+          </div>
+          <h5 class="text-center text-slate-300 text-sm mb-2">mAP 指标曲线</h5>
+          <div class="h-64">
+            <canvas id="mAPChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 精确率 & 召回率曲线 -->
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-green-500/30">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            <h4 class="text-sm font-medium text-green-400">精确率 & 召回率</h4>
+          </div>
+          <h5 class="text-center text-slate-300 text-sm mb-2">精确率 & 召回率</h5>
+          <div class="h-64">
+            <canvas id="precisionRecallChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 训练指标子版块 -->
+  <section id="training-metrics" class="model-section hidden">
+    <div class="glass-panel rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-cyan-400">模型训练指标分析</h3>
+        <button class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">
+          <span class="iconify mr-1" data-icon="solar:download-bold"></span>导出指标报告
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">精确率 (Precision)</p>
+          <p class="text-2xl font-bold text-cyan-400">92.8%</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">召回率 (Recall)</p>
+          <p class="text-2xl font-bold text-cyan-400">91.5%</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">F1 分数</p>
+          <p class="text-2xl font-bold text-cyan-400">92.1%</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">mAP@0.5</p>
+          <p class="text-2xl font-bold text-cyan-400">90.3%</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">推理速度</p>
+          <p class="text-2xl font-bold text-cyan-400">18ms/帧</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
+          <p class="text-xs text-slate-400">参数量</p>
+          <p class="text-2xl font-bold text-cyan-400">6.2M</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-700 mb-6">
+        <h4 class="font-medium mb-4">类别级指标详情</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-700">
+                <th class="text-left py-3 px-4 text-slate-400">目标类别</th>
+                <th class="text-center py-3 px-4 text-slate-400">精确率</th>
+                <th class="text-center py-3 px-4 text-slate-400">召回率</th>
+                <th class="text-center py-3 px-4 text-slate-400">F1 分数</th>
+                <th class="text-center py-3 px-4 text-slate-400">样本数</th>
+                <th class="text-center py-3 px-4 text-slate-400">误检数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-medium">人员</td>
+                <td class="text-center text-green-400">95.2%</td>
+                <td class="text-center text-green-400">94.8%</td>
+                <td class="text-center text-green-400">95.0%</td>
+                <td class="text-center">1258</td>
+                <td class="text-center text-red-400">18</td>
+              </tr>
+              <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-medium">车辆</td>
+                <td class="text-center text-green-400">93.5%</td>
+                <td class="text-center text-green-400">92.1%</td>
+                <td class="text-center text-green-400">92.8%</td>
+                <td class="text-center">896</td>
+                <td class="text-center text-red-400">24</td>
+              </tr>
+              <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-medium">异常物体</td>
+                <td class="text-center text-yellow-400">88.7%</td>
+                <td class="text-center text-yellow-400">87.9%</td>
+                <td class="text-center text-yellow-400">88.3%</td>
+                <td class="text-center">452</td>
+                <td class="text-center text-red-400">36</td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-medium">环境异常</td>
+                <td class="text-center text-yellow-400">89.2%</td>
+                <td class="text-center text-yellow-400">88.5%</td>
+                <td class="text-center text-yellow-400">88.8%</td>
+                <td class="text-center">635</td>
+                <td class="text-center text-red-400">29</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-700">
+        <h4 class="font-medium mb-4">混淆矩阵</h4>
+        <div class="h-80">
+          <canvas id="confusionMatrixChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 模型演示子版块 -->
+  <section id="model-demo" class="model-section hidden">
+    <div class="glass-panel rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-cyan-400">模型效果实时演示</h3>
+        <div class="flex gap-3">
+          <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 outline-none">
+            <option value="yolov8n">YOLOv8n - 目标检测</option>
+            <option value="cnn">CNN - 环境异常检测</option>
+            <option value="transformer">Transformer - 行为分析</option>
+          </select>
+          <button class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition-all">
+            <span class="iconify mr-1" data-icon="solar:camera-bold"></span>切换摄像头
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-slate-900 rounded-xl overflow-hidden relative">
+          <div class="absolute top-3 left-3 bg-black/60 backdrop-blur rounded px-2 py-1 text-xs text-white">原始画面</div>
+          <img src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg" alt="原始监控画面" class="w-full h-auto aspect-video object-cover">
+        </div>
+        <div class="bg-slate-900 rounded-xl overflow-hidden relative">
+          <div class="absolute top-3 left-3 bg-black/60 backdrop-blur rounded px-2 py-1 text-xs text-white">模型推理结果</div>
+          <img src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg" alt="模型推理画面" class="w-full h-auto aspect-video object-cover">
+          <div class="absolute top-1/4 left-1/4 w-24 h-32 border-2 border-red-500 rounded-lg">
+            <div class="absolute -top-5 left-0 bg-red-500 text-white text-xs px-2 py-0.5 rounded">人员 (98%)</div>
+          </div>
+          <div class="absolute bottom-1/4 right-1/4 w-32 h-20 border-2 border-yellow-500 rounded-lg">
+            <div class="absolute -top-5 left-0 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded">车辆 (95%)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h4 class="font-medium mb-4">演示控制</h4>
+          <div class="space-y-4">
+            <div class="flex gap-2">
+              <button class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded text-sm">
+                <span class="iconify mr-1" data-icon="solar:play-bold"></span>开始演示
+              </button>
+              <button class="flex-1 bg-slate-700 hover:bg-slate-600 text-white p-2 rounded text-sm">
+                <span class="iconify mr-1" data-icon="solar:pause-bold"></span>暂停
+              </button>
+              <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-sm">
+                <span class="iconify mr-1" data-icon="solar:stop-bold"></span>停止
+              </button>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-2">置信度阈值</label>
+              <input type="range" min="0.1" max="0.9" step="0.05" value="0.5" class="w-full accent-cyan-500">
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
+                <span>0.1</span>
+                <span>当前: 0.5</span>
+                <span>0.9</span>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs text-slate-400">检测类别</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded text-xs">
+                  <input type="checkbox" checked class="accent-cyan-500"> 人员
+                </label>
+                <label class="flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded text-xs">
+                  <input type="checkbox" checked class="accent-cyan-500"> 车辆
+                </label>
+                <label class="flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded text-xs">
+                  <input type="checkbox" checked class="accent-cyan-500"> 异常物体
+                </label>
+                <label class="flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded text-xs">
+                  <input type="checkbox" class="accent-cyan-500"> 环境异常
+                </label>
+              </div>
+            </div>
+            <button class="w-full bg-slate-700 hover:bg-slate-600 text-white p-2 rounded text-sm">
+              <span class="iconify mr-1" data-icon="solar:save-bold"></span>保存演示视频
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h4 class="font-medium mb-4">实时检测统计</h4>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-900/80 rounded-lg p-3 text-center">
+                <p class="text-xs text-slate-400">总检测目标数</p>
+                <p class="text-2xl font-bold text-cyan-400">18</p>
+              </div>
+              <div class="bg-slate-900/80 rounded-lg p-3 text-center">
+                <p class="text-xs text-slate-400">FPS</p>
+                <p class="text-2xl font-bold text-cyan-400">25.8</p>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <p class="text-xs text-slate-400">类别分布</p>
+              <div class="space-y-2">
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span>人员</span>
+                    <span>12 (66.7%)</span>
+                  </div>
+                  <div class="w-full bg-slate-700 rounded-full h-2">
+                    <div class="bg-red-500 h-2 rounded-full" style="width: 66.7%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span>车辆</span>
+                    <span>5 (27.8%)</span>
+                  </div>
+                  <div class="w-full bg-slate-700 rounded-full h-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 27.8%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span>异常物体</span>
+                    <span>1 (5.5%)</span>
+                  </div>
+                  <div class="w-full bg-slate-700 rounded-full h-2">
+                    <div class="bg-purple-500 h-2 rounded-full" style="width: 5.5%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900/80 rounded-lg p-3">
+              <p class="text-xs text-slate-400 mb-1">最新告警</p>
+              <p class="text-sm text-red-400"><span class="iconify mr-1" data-icon="solar:warning-bold"></span>检测到异常物体，置信度 92%</p>
+              <p class="text-xs text-slate-400 mt-1">2026-03-20 14:25:38</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h4 class="font-medium mb-4 flex justify-between items-center">
+            <span>演示日志</span>
+            <button class="text-xs text-slate-400 hover:text-white"><span class="iconify" data-icon="solar:trash-bold"></span></button>
+          </h4>
+          <div class="bg-slate-900/80 rounded-lg p-3 h-60 overflow-y-auto text-xs text-slate-300 space-y-2">
+            <div><span class="text-slate-500">2026-03-20 14:20:00</span> - 模型加载完成，开始演示</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:05</span> - 检测到人员 x 3，置信度 95%-98%</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:10</span> - 检测到车辆 x 2，置信度 90%-95%</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:15</span> - 调整置信度阈值至 0.5</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:20</span> - 过滤低置信度目标（<50%）</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:25</span> - 检测到异常物体 x 1，置信度 92%</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:30</span> - 触发异常告警，已推送至设备管理系统</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:35</span> - FPS 稳定在 25-26 帧/秒</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:40</span> - 检测到人员 x 5，车辆 x 1</div>
+            <div><span class="text-slate-500">2026-03-20 14:20:45</span> - 演示正常运行中...</div>
+          </div>
+          <button class="w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white p-2 rounded text-xs">
+            <span class="iconify mr-1" data-icon="solar:download-bold"></span>导出日志
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 子版块切换逻辑
+  const tabs = document.querySelectorAll('.model-tab');
+  const sections = document.querySelectorAll('.model-section');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      tabs.forEach(t => t.classList.remove('active', 'bg-cyan-600/80', 'text-white'));
+      sections.forEach(s => s.classList.add('hidden'));
+      this.classList.add('active', 'bg-cyan-600/80', 'text-white');
+      const targetId = this.getAttribute('href').substring(1);
+      document.getElementById(targetId).classList.remove('hidden');
+    });
+  });
+
+  // 子标签切换（训练曲线/指标汇总）
+  const subTabs = document.querySelectorAll('.model-sub-tab');
+  subTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      subTabs.forEach(t => t.classList.remove('active', 'bg-cyan-600/80', 'text-white'));
+      this.classList.add('active', 'bg-cyan-600/80', 'text-white');
+    });
+  });
+
+  // --------------------------
+  // 1. 训练损失曲线
+  // --------------------------
+  const trainLossCtx = document.getElementById('trainLossChart').getContext('2d');
+  const trainLossChart = new Chart(trainLossCtx, {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 300}, (_, i) => i),
+      datasets: [
+        {
+          label: 'Box Loss',
+          data: Array.from({length: 300}, (_, i) => 1.8 * Math.exp(-i/80) + 0.5),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Cls Loss',
+          data: Array.from({length: 300}, (_, i) => 1.2 * Math.exp(-i/60) + 0.3),
+          borderColor: '#a855f7',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'DFL Loss',
+          data: Array.from({length: 300}, (_, i) => 1.0 * Math.exp(-i/100) + 0.6),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          title: { display: true, text: 'Loss', color: 'rgba(255, 255, 255, 0.7)' },
+          beginAtZero: true,
+          max: 1.8,
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        },
+        x: {
+          title: { display: true, text: 'Epoch', color: 'rgba(255, 255, 255, 0.7)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: 'rgba(255, 255, 255, 0.7)' } }
+      }
+    }
+  });
+
+  // --------------------------
+  // 2. 验证损失曲线
+  // --------------------------
+  const valLossCtx = document.getElementById('valLossChart').getContext('2d');
+  const valLossChart = new Chart(valLossCtx, {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 300}, (_, i) => i),
+      datasets: [
+        {
+          label: 'Val Box Loss',
+          data: Array.from({length: 300}, (_, i) => 1.6 * Math.exp(-i/50) + 1.1),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Val Cls Loss',
+          data: Array.from({length: 300}, (_, i) => 1.3 * Math.exp(-i/40) + 0.8),
+          borderColor: '#eab308',
+          backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Val DFL Loss',
+          data: Array.from({length: 300}, (_, i) => 1.0 * Math.exp(-i/60) + 0.7),
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.1)',
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          title: { display: true, text: 'Loss', color: 'rgba(255, 255, 255, 0.7)' },
+          beginAtZero: true,
+          max: 1.6,
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        },
+        x: {
+          title: { display: true, text: 'Epoch', color: 'rgba(255, 255, 255, 0.7)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: 'rgba(255, 255, 255, 0.7)' } }
+      }
+    }
+  });
+
+  // --------------------------
+  // 3. mAP 指标曲线
+  // --------------------------
+  const mAPCtx = document.getElementById('mAPChart').getContext('2d');
+  const mAPChart = new Chart(mAPCtx, {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 300}, (_, i) => i),
+      datasets: [
+        {
+          label: 'mAP@0.5',
+          data: Array.from({length: 300}, (_, i) => 45 * (1 - Math.exp(-i/40))),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'mAP@0.5:0.95',
+          data: Array.from({length: 300}, (_, i) => 25 * (1 - Math.exp(-i/50))),
+          borderColor: '#a855f7',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          title: { display: true, text: 'mAP (%)', color: 'rgba(255, 255, 255, 0.7)' },
+          beginAtZero: true,
+          max: 50,
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        },
+        x: {
+          title: { display: true, text: 'Epoch', color: 'rgba(255, 255, 255, 0.7)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: 'rgba(255, 255, 255, 0.7)' } }
+      }
+    }
+  });
+
+  // --------------------------
+  // 4. 精确率 & 召回率曲线
+  // --------------------------
+  const prCtx = document.getElementById('precisionRecallChart').getContext('2d');
+  const precisionRecallChart = new Chart(prCtx, {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 300}, (_, i) => i),
+      datasets: [
+        {
+          label: 'Precision',
+          data: Array.from({length: 300}, (_, i) => 50 * (1 - Math.exp(-i/30)) + 5),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Recall',
+          data: Array.from({length: 300}, (_, i) => 35 * (1 - Math.exp(-i/35)) + 5),
+          borderColor: '#f87171',
+          backgroundColor: 'rgba(248, 113, 113, 0.1)',
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          title: { display: true, text: '%', color: 'rgba(255, 255, 255, 0.7)' },
+          beginAtZero: true,
+          max: 65,
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        },
+        x: {
+          title: { display: true, text: 'Epoch', color: 'rgba(255, 255, 255, 0.7)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: 'rgba(255, 255, 255, 0.7)' } }
+      }
+    }
+  });
+
+  // 告警函数
+  function createAlert(title, content, type = 'error') {
+    const alertItem = document.createElement('div');
+    alertItem.className = 'alert-item';
+    if (type === 'warning') alertItem.style.borderLeftColor = '#eab308';
+    if (type === 'success') alertItem.style.borderLeftColor = '#22c55e';
+    alertItem.innerHTML = `
+      <div class="flex justify-between items-start">
+        <span class="font-medium">${title}</span>
+        <button class="text-slate-400 hover:text-white close-alert"><span class="iconify text-sm" data-icon="solar:close-bold"></span></button>
+      </div>
+      <p class="text-xs mt-1 text-slate-300">${content}</p>
+    `;
+    const alertContainer = document.getElementById('alertContainer');
+    alertContainer.appendChild(alertItem);
+    alertItem.querySelector('.close-alert').addEventListener('click', () => alertItem.remove());
+    setTimeout(() => {
+      alertItem.style.opacity = '0';
+      alertItem.style.transform = 'translateX(100%)';
+      alertItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      setTimeout(() => alertItem.remove(), 300);
+    }, 5000);
+  }
+  createAlert('模型管理系统就绪', '训练曲线模块已加载完成，可查看4张训练可视化图表', 'success');
+});
+</script>
+</body>
+</html>
