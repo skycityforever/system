@@ -275,18 +275,56 @@ function createDeviceCard(deviceData) {
 }
 
 // 表单提交处理
-form.addEventListener('submit', (e) => {
+// --------------------------
+// 6. 动态设备卡片生成 + 后端API调用
+// --------------------------
+// 表单提交处理
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(form);
   const deviceData = Object.fromEntries(formData.entries());
-  nodeCounts[deviceData.status] += 1;
-  updateStats();
-  setTimeout(() => {
-    alert('设备节点初始化成功！\n设备 ID: ' + deviceData.device_id);
+
+  try {
+    // 1. 调用后端API保存设备数据到JSON
+    const response = await fetch('http://localhost:5000/api/device/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(deviceData),
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      // 2. 更新页面统计
+      nodeCounts[deviceData.status] += 1;
+      updateStats();
+
+      // 3. 生成设备卡片
+      createDeviceCard(deviceData);
+
+      // 4. 提示成功
+      createAlert(`设备 ${deviceData.device_id} 已添加`, '新设备节点初始化完成，数据已保存', 'success');
+      alert('设备节点初始化成功！\n设备 ID: ' + deviceData.device_id);
+      closeModal();
+    } else {
+      // API调用成功但保存失败
+      createAlert(`设备 ${deviceData.device_id} 添加失败`, result.msg || '保存数据到JSON失败', 'error');
+      alert('设备注册失败：' + (result.msg || '未知错误'));
+    }
+  } catch (error) {
+    // API调用失败（如后端未启动）
+    console.error('调用后端API失败：', error);
+    createAlert('API调用失败', '请检查后端服务是否启动（http://localhost:5000）', 'error');
+    alert('设备注册失败：无法连接到后端服务，请先启动Flask服务器');
+
+    // 降级处理：仅在页面展示（不保存到JSON）
+    nodeCounts[deviceData.status] += 1;
+    updateStats();
     createDeviceCard(deviceData);
     closeModal();
-    createAlert(`设备 ${deviceData.device_id} 已添加`, '新设备节点初始化完成，当前状态：' + (deviceData.status === 'online' ? '在线' : deviceData.status === 'offline' ? '离线' : deviceData.status === 'maintenance' ? '维护中' : '异常'), 'success');
-  }, 800);
+  }
 });
 
 // --------------------------
