@@ -44,10 +44,11 @@
 <div class="flex justify-between items-end mb-8">
 <div>
 <h2 class="text-2xl font-bold mb-2">全站节点拓扑</h2>
-<div class="flex gap-4 text-sm">
+<div class="flex gap-4 text-sm flex-wrap">
 <span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-green-500 status-pulse"></span> 在线: 124 节点</span>
 <span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-red-500"></span> 异常: 2 节点</span>
 <span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> 自热开启中: 12</span>
+<span class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-slate-500"></span> 离线: 10 节点</span>
 </div>
 </div>
 <div class="flex gap-3">
@@ -59,9 +60,9 @@
 </div>
 </div>
 
-<!-- 动态卡片容器（核心修改：添加ID） -->
+<!-- 动态卡片容器（默认展示4种状态模板） -->
 <div id="deviceCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-  <!-- 初始示例卡片 -->
+  <!-- 1. 在线（Stable）模板 -->
   <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group">
     <div class="h-44 bg-slate-800 relative">
       <img alt="Camera view preview" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
@@ -95,12 +96,46 @@
       </div>
     </div>
   </div>
-  <!-- 初始异常卡片 -->
-  <div class="glass-panel rounded-2xl overflow-hidden border-yellow-500/50">
-    <div class="h-44 bg-slate-800 relative grayscale">
-      <img alt="Camera fault preview" class="w-full h-full object-cover opacity-30" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/7f6a14904d7f49b0a5aa9788d772a5ae.jpg"/>
+
+  <!-- 2. 异常（Error）模板 -->
+  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-red-500/50">
+    <div class="h-44 bg-slate-800 relative">
+      <img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span class="iconify text-4xl text-red-500 animate-pulse" data-icon="solar:close-circle-bold"></span>
+      </div>
+      <div class="absolute top-3 left-3 flex gap-2">
+        <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
+        <span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>
+      </div>
+    </div>
+    <div class="p-5">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h4 class="font-bold text-lg leading-none">FAULT-NODE-01</h4>
+          <p class="text-xs text-slate-500 mt-2">连接中断</p>
+        </div>
+        <span class="bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Error</span>
+      </div>
+      <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-red-500 border border-red-500/20 mb-4">
+        错误: 设备连接异常，无法获取实时数据。
+      </div>
+      <div class="flex gap-2">
+        <button class="flex-1 bg-red-600 text-white p-2 rounded text-xs font-bold">排查故障</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 维护中（Unstable）模板 -->
+  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group border-yellow-500/50">
+    <div class="h-44 bg-slate-800 relative">
+      <img alt="Camera fault preview" class="w-full h-full object-cover opacity-30 grayscale" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/7f6a14904d7f49b0a5aa9788d772a5ae.jpg"/>
       <div class="absolute inset-0 flex items-center justify-center">
         <span class="iconify text-4xl text-yellow-500 animate-pulse" data-icon="solar:danger-bold"></span>
+      </div>
+      <div class="absolute top-3 left-3 flex gap-2">
+        <span class="px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] text-white">4K UHD</span>
+        <span class="px-2 py-0.5 bg-cyan-600 text-[10px] text-white rounded">PTZ</span>
       </div>
     </div>
     <div class="p-5">
@@ -112,15 +147,16 @@
         <span class="bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Unstable</span>
       </div>
       <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-yellow-500 border border-yellow-500/20 mb-4">
-          警告: 极端大风环境导致微波链路抖动，正在重试。
+        警告: 极端大风环境导致微波链路抖动，正在重试。
       </div>
       <div class="flex gap-2">
         <button class="flex-1 bg-yellow-600 text-white p-2 rounded text-xs font-bold">尝试重连</button>
       </div>
     </div>
   </div>
-  <!-- 初始离线卡片 -->
-  <div class="glass-panel rounded-2xl overflow-hidden grayscale">
+
+  <!-- 4. 离线（Offline）模板 -->
+  <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all group grayscale">
     <div class="h-44 bg-slate-800 relative">
       <div class="absolute inset-0 flex items-center justify-center bg-black/80">
         <span class="text-xs font-mono text-slate-600 tracking-widest">OFFLINE</span>
@@ -221,6 +257,7 @@
             <option value="online">在线</option>
             <option value="offline">离线</option>
             <option value="maintenance">维护中</option>
+            <option value="error">异常</option>
           </select>
         </div>
       </div>
@@ -293,22 +330,30 @@
       statusClass = 'bg-yellow-500/20 text-yellow-500';
       statusText = 'Unstable';
       cardClass += ' border-yellow-500/50';
+    } else if (deviceData.status === 'error') {
+      statusClass = 'bg-red-500/20 text-red-500';
+      statusText = 'Error';
+      cardClass += ' border-red-500/50';
     }
 
-    // 卡片HTML模板（适配状态+类型）
+    // 卡片HTML模板
     card.className = cardClass;
     card.innerHTML = `
-      <div class="h-44 bg-slate-800 relative ${deviceData.status === 'offline' ? 'grayscale' : ''}">
+      <div class="h-44 bg-slate-800 relative">
         ${deviceData.status === 'offline' ? `
           <div class="absolute inset-0 flex items-center justify-center bg-black/80">
             <span class="text-xs font-mono text-slate-600 tracking-widest">OFFLINE</span>
           </div>
         ` : `
-          <img alt="Camera view preview" class="w-full h-full object-cover ${deviceData.status === 'maintenance' ? 'opacity-30 grayscale' : ''}"
+          <img alt="Camera view preview" class="w-full h-full object-cover ${deviceData.status === 'maintenance' || deviceData.status === 'error' ? 'opacity-30 grayscale' : ''}"
             src="https://modao.cc/agent-py/media/generated_images/2026-03-18/5ccbabe21d33428a8ff7e3159e0aff28.jpg"/>
           ${deviceData.status === 'maintenance' ? `
             <div class="absolute inset-0 flex items-center justify-center">
               <span class="iconify text-4xl text-yellow-500 animate-pulse" data-icon="solar:danger-bold"></span>
+            </div>
+          ` : deviceData.status === 'error' ? `
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="iconify text-4xl text-red-500 animate-pulse" data-icon="solar:close-circle-bold"></span>
             </div>
           ` : ''}
           <div class="absolute top-3 left-3 flex gap-2">
@@ -354,6 +399,13 @@
           <div class="flex gap-2">
             <button class="flex-1 bg-yellow-600 text-white p-2 rounded text-xs font-bold">尝试重连</button>
           </div>
+        ` : deviceData.status === 'error' ? `
+          <div class="p-3 bg-slate-900 rounded-lg text-[10px] text-red-500 border border-red-500/20 mb-4">
+            错误: 设备连接异常，无法获取实时数据。
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-red-600 text-white p-2 rounded text-xs font-bold">排查故障</button>
+          </div>
         ` : ''}
       </div>
     `;
@@ -381,7 +433,7 @@
     .then(data => {
       if (data.status === 'success') {
         alert('设备节点初始化成功！\n设备 ID: ' + deviceData.device_id);
-        createDeviceCard(deviceData); // 动态添加卡片
+        createDeviceCard(deviceData);
         closeModal();
       } else {
         alert('设备注册失败：' + data.msg);
@@ -390,7 +442,6 @@
     .catch(error => {
       console.error('Error:', error);
       alert('网络错误，设备注册失败！\n已本地渲染设备卡片');
-      // 本地测试时，即使后端未启动也渲染卡片
       createDeviceCard(deviceData);
       closeModal();
     });
