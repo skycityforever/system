@@ -1,0 +1,139 @@
+/* 基础样式补充 */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* 告警提示样式 */
+.alert-item {
+  position: fixed;
+  top: 4px;
+  right: 4px;
+  background: #1e293b;
+  border-left: 4px solid #ef4444;
+  color: #f1f5f9;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 9999;
+  width: 320px;
+  transition: all 0.3s ease;
+}
+
+/* Chart.js 深色模式适配 */
+canvas {
+  background-color: transparent;
+}
+
+/* 隐藏元素样式 */
+.hidden {
+  display: none !important;
+}
+
+/* 激活的标签样式 */
+.model-tab.active {
+  background-color: #0891b2;
+  color: white;
+}
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* 弹窗遮罩与动画 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.modal-backdrop.show {
+  display: block;
+  opacity: 1;
+}
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 90%;
+  max-width: 600px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 24px;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+.modal-content.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: all;
+}
+/* 输入框样式统一 */
+.model-input {
+  width: 100%;
+  background: #334155;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #f1f5f9;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.model-input:focus {
+  border-color: #06b6d4;
+}
+.model-input::placeholder {
+  color: #94a3b8;
+}
+/* 按钮样式 */
+.btn-primary {
+  background: #06b6d4;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: #0e7490;
+}
+.btn-secondary {
+  background: #475569;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: #64748b;
+}
