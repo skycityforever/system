@@ -311,7 +311,7 @@ form.addEventListener('submit', (e) => {
   console.log('提交的设备信息:', deviceData);
 
   // 发送到后端 Flask 接口
-  fetch('/api/device/register', {
+  fetch('http://localhost:5000/api/device/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
