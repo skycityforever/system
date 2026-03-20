@@ -308,7 +308,47 @@ document.addEventListener('DOMContentLoaded', function() {
   if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
 
   // --------------------------
-  // 上传逻辑
+  // 新增：动态创建模型卡片
+  // --------------------------
+  function createModelCard(modelData) {
+    const { modelName, version, device, size, inferTime, accuracy, env } = modelData;
+    const now = new Date();
+    const loadTime = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\//g, '-');
+
+    const card = document.createElement('div');
+    card.className = 'bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all';
+    card.dataset.model = JSON.stringify(modelData); // 存储模型数据
+    card.innerHTML = `
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h4 class="font-bold">${modelName}</h4>
+          <p class="text-xs text-slate-400 mt-1">版本: ${version} | 大小: ${size}MB</p>
+        </div>
+        <span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">已加载</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+        <div><p class="text-slate-400">部署设备</p><p class="font-medium">${device}</p></div>
+        <div><p class="text-slate-400">加载时间</p><p class="font-medium">${loadTime}</p></div>
+        <div><p class="text-slate-400">推理耗时</p><p class="font-medium">${inferTime}ms/帧</p></div>
+        <div><p class="text-slate-400">精度</p><p class="font-medium">${accuracy}%</p></div>
+      </div>
+      <div class="flex gap-2">
+        <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs restart-btn">重启模型</button>
+        <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs unload-btn">卸载</button>
+      </div>
+    `;
+    return card;
+  }
+
+  // --------------------------
+  // 上传逻辑（新增卡片）
   // --------------------------
   function handleModalUpload() {
     const modelName = document.getElementById('modalModelName')?.value;
@@ -325,10 +365,20 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // 1. 创建新卡片
+    const modelData = { modelName, version, device, size, inferTime, accuracy, env };
+    const newCard = createModelCard(modelData);
+
+    // 2. 插入到卡片容器中
+    const container = document.getElementById('modelCardsContainer');
+    if (container) {
+      container.appendChild(newCard);
+    }
+
     createAlert('上传成功', `模型「${modelName}」已开始上传并部署到「${device}」`, 'success');
     closeModal();
 
-    // 清空表单
+    // 3. 清空表单
     if (document.getElementById('modalUploadForm')) {
       document.getElementById('modalUploadForm').reset();
     }
@@ -338,6 +388,124 @@ document.addEventListener('DOMContentLoaded', function() {
   const modalUploadBtn = document.getElementById('modalUploadBtn');
   if (modalUploadBtn) {
     modalUploadBtn.addEventListener('click', handleModalUpload);
+  }
+
+  // --------------------------
+  // 核心交互：卸载/重启/加载/查看详情
+  // --------------------------
+  const container = document.getElementById('modelCardsContainer');
+  if (container) {
+    container.addEventListener('click', function(e) {
+      const target = e.target;
+      // 使用语义化类名，避免特殊字符问题
+      const card = target.closest('.bg-slate-800\\/50');
+      if (!card) return;
+
+      // 1. 卸载模型
+      if (target.classList.contains('unload-btn')) {
+        const modelName = card.querySelector('h4').textContent;
+        card.remove();
+        createAlert('卸载成功', `模型「${modelName}」已从设备上卸载`, 'success');
+      }
+
+      // 2. 重启模型 - 切换为未加载样式（图二）
+      if (target.classList.contains('restart-btn')) {
+        const modelName = card.querySelector('h4').textContent;
+        const modelData = JSON.parse(card.dataset.model || '{}');
+
+        // 替换为未加载样式
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold">${modelName}</h4>
+              <p class="text-xs text-slate-400 mt-1">版本: ${modelData.version} | 大小: ${modelData.size}MB</p>
+            </div>
+            <span class="bg-slate-700 text-slate-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">未加载</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div><p class="text-slate-400">目标设备</p><p class="font-medium">${modelData.device}</p></div>
+            <div><p class="text-slate-400">依赖环境</p><p class="font-medium">${modelData.env || 'Python 3.9 + Torch 2.1'}</p></div>
+            <div><p class="text-slate-400">预估耗时</p><p class="font-medium">${modelData.inferTime}ms/帧</p></div>
+            <div><p class="text-slate-400">预估精度</p><p class="font-medium">${modelData.accuracy}%</p></div>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white p-2 rounded text-xs load-btn">加载模型</button>
+            <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs detail-btn">查看详情</button>
+          </div>
+        `;
+        createAlert('重启成功', `模型「${modelName}」正在重启，预计10秒后恢复服务`, 'success');
+      }
+
+      // 3. 加载模型 - 恢复为已加载样式
+      if (target.classList.contains('load-btn')) {
+        const modelName = card.querySelector('h4').textContent;
+        const modelData = JSON.parse(card.dataset.model || '{}');
+        const now = new Date();
+        const loadTime = now.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(/\//g, '-');
+
+        // 恢复为已加载样式
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold">${modelName}</h4>
+              <p class="text-xs text-slate-400 mt-1">版本: ${modelData.version} | 大小: ${modelData.size}MB</p>
+            </div>
+            <span class="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">已加载</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div><p class="text-slate-400">部署设备</p><p class="font-medium">${modelData.device}</p></div>
+            <div><p class="text-slate-400">加载时间</p><p class="font-medium">${loadTime}</p></div>
+            <div><p class="text-slate-400">推理耗时</p><p class="font-medium">${modelData.inferTime}ms/帧</p></div>
+            <div><p class="text-slate-400">精度</p><p class="font-medium">${modelData.accuracy}%</p></div>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs restart-btn">重启模型</button>
+            <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs unload-btn">卸载</button>
+          </div>
+        `;
+        createAlert('加载成功', `模型「${modelName}」已成功加载到「${modelData.device}」`, 'success');
+      }
+
+      // 4. 查看详情
+      if (target.classList.contains('detail-btn')) {
+        const modelData = JSON.parse(card.dataset.model || '{}');
+        const detailModal = document.createElement('div');
+        detailModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm';
+        detailModal.innerHTML = `
+          <div class="bg-slate-800 rounded-xl p-6 w-full max-w-lg border border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold text-white">模型详情</h3>
+              <button class="text-slate-400 hover:text-white close-detail"><span class="iconify text-xl" data-icon="solar:close-bold"></span></button>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="grid grid-cols-2 gap-2">
+                <div><p class="text-slate-400">模型名称</p><p class="font-medium">${modelData.modelName}</p></div>
+                <div><p class="text-slate-400">版本号</p><p class="font-medium">${modelData.version}</p></div>
+                <div><p class="text-slate-400">部署设备</p><p class="font-medium">${modelData.device}</p></div>
+                <div><p class="text-slate-400">模型大小</p><p class="font-medium">${modelData.size}MB</p></div>
+                <div><p class="text-slate-400">推理耗时</p><p class="font-medium">${modelData.inferTime}ms/帧</p></div>
+                <div><p class="text-slate-400">模型精度</p><p class="font-medium">${modelData.accuracy}%</p></div>
+                <div><p class="text-slate-400">工作环境</p><p class="font-medium">${modelData.env || 'Python 3.9 + Torch 2.1'}</p></div>
+              </div>
+              <div>
+                <p class="text-slate-400">模型描述</p>
+                <p class="font-medium mt-1 text-slate-300">${modelData.desc || '无描述信息'}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(detailModal);
+        detailModal.querySelector('.close-detail').addEventListener('click', () => detailModal.remove());
+        detailModal.addEventListener('click', (e) => e.target === detailModal && detailModal.remove());
+      }
+    });
   }
 
   // --------------------------

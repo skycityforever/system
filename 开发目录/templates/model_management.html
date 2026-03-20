@@ -59,12 +59,12 @@
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold text-cyan-400">模型加载与部署</h3>
         <button id="openUploadModalBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1">
-          <span class="iconify" data-icon="solar:upload-bold"></span>上传模型文件
+          <span class="iconify" data-icon="solar:upload-bold"></span>上传模型文件并加载
         </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="modelCardsContainer">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all" data-model='{"modelName":"YOLOv8n - 目标检测","version":"v1.0.2","device":"边缘网关-01","size":"6.2","inferTime":"18","accuracy":"92.5","env":"Python 3.9 + Torch 2.1"}'>
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-bold">YOLOv8n - 目标检测</h4>
@@ -83,7 +83,7 @@
             <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs">卸载</button>
           </div>
         </div>
-        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all" data-model='{"modelName":"Transformer - 行为分析","version":"v0.8.1","device":"PTZ摄像头-02","size":"12.5","inferTime":"45","accuracy":"94.2","env":"Python 3.9 + Torch 2.1"}'>
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-bold">CNN - 环境异常检测</h4>
@@ -102,7 +102,7 @@
             <button class="flex-1 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded text-xs">卸载</button>
           </div>
         </div>
-        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-cyan-500/50 transition-all" data-model='{"modelName":"Transformer - 行为分析","version":"v0.8.1","device":"PTZ摄像头-02","size":"12.5","inferTime":"45","accuracy":"94.2","env":"Python 3.9 + Torch 2.1"}'>
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-bold">Transformer - 行为分析</h4>
@@ -487,9 +487,9 @@
       <label class="text-xs text-slate-400">部署设备</label>
       <select id="modalDevice" class="model-input">
         <option value="">选择部署设备</option>
-        <option value="gateway-01">边缘网关-01</option>
-        <option value="camera-02">PTZ摄像头-02</option>
-        <option value="sensor-04">传感器节点-04</option>
+        <option value="边缘网关-01">边缘网关-01</option>
+        <option value="PTZ摄像头-02">PTZ摄像头-02</option>
+        <option value="传感器节点-04">传感器节点-04</option>
       </select>
     </div>
     <div class="space-y-2">
