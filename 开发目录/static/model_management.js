@@ -281,6 +281,68 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   });
+  // 在 precisionRecallChart 初始化后添加
+const confusionMatrixCtx = document.getElementById('confusionMatrixChart').getContext('2d');
+const confusionMatrixChart = new Chart(confusionMatrixCtx, {
+  type: 'matrix', // 注意：Chart.js 原生不支持 matrix，需使用 chartjs-chart-matrix 插件
+  data: {
+    labels: ['人员', '车辆', '异常物体', '环境异常'],
+    datasets: [{
+      label: '混淆矩阵',
+      data: [
+        {x: 0, y: 0, v: 1240}, // 人员→人员
+        {x: 0, y: 1, v: 8},    // 人员→车辆
+        {x: 0, y: 2, v: 7},    // 人员→异常物体
+        {x: 0, y: 3, v: 3},    // 人员→环境异常
+        {x: 1, y: 0, v: 12},   // 车辆→人员
+        {x: 1, y: 1, v: 872},  // 车辆→车辆
+        {x: 1, y: 2, v: 9},    // 车辆→异常物体
+        {x: 1, y: 3, v: 3},    // 车辆→环境异常
+        {x: 2, y: 0, v: 15},   // 异常物体→人员
+        {x: 2, y: 1, v: 11},   // 异常物体→车辆
+        {x: 2, y: 2, v: 416},  // 异常物体→异常物体
+        {x: 2, y: 3, v: 10},   // 异常物体→环境异常
+        {x: 3, y: 0, v: 9},    // 环境异常→人员
+        {x: 3, y: 1, v: 7},    // 环境异常→车辆
+        {x: 3, y: 2, v: 13},   // 环境异常→异常物体
+        {x: 3, y: 3, v: 606}   // 环境异常→环境异常
+      ],
+      backgroundColor: (context) => {
+        const value = context.raw.v;
+        const max = 1240;
+        const alpha = value / max;
+        return `rgba(6, 182, 212, ${alpha})`;
+      },
+      borderColor: 'rgba(30, 41, 59, 0.8)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (context) => `${context[0].raw.yLabel} → ${context[0].raw.xLabel}`,
+          label: (context) => `样本数: ${context.raw.v}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: '预测类别', color: 'rgba(255, 255, 255, 0.7)' },
+        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+        grid: { display: false }
+      },
+      y: {
+        title: { display: true, text: '真实类别', color: 'rgba(255, 255, 255, 0.7)' },
+        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+        grid: { display: false }
+      }
+    }
+  }
+});
 
   // --------------------------
   // 弹窗控制逻辑
@@ -542,3 +604,69 @@ document.addEventListener('DOMContentLoaded', function() {
   // 初始化提示
   createAlert('模型管理系统就绪', '训练曲线模块已加载完成，图表已调整为每5轮显示一个散点', 'success');
 });
+
+// 在 DOMContentLoaded 事件中绑定按钮
+const exportBtn = document.querySelector('button:has(span.iconify[data-icon="solar:download-bold"])');
+if (exportBtn) {
+  exportBtn.addEventListener('click', exportMetricsReport);
+}
+
+// 导出报告函数
+function exportMetricsReport() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // 标题
+  doc.setFontSize(18);
+  doc.text('模型训练指标分析报告', 14, 22);
+  doc.setFontSize(12);
+  doc.text(`生成时间: ${new Date().toLocaleString('zh-CN')}`, 14, 32);
+
+  // 总体指标
+  doc.setFontSize(14);
+  doc.text('总体指标', 14, 45);
+  const overallMetrics = [
+    ['指标', '数值'],
+    ['精确率 (Precision)', '92.8%'],
+    ['召回率 (Recall)', '91.5%'],
+    ['F1 分数', '92.1%'],
+    ['mAP@0.5', '90.3%'],
+    ['推理速度', '18ms/帧'],
+    ['参数量', '6.2M']
+  ];
+  doc.autoTable({
+    head: [overallMetrics[0]],
+    body: overallMetrics.slice(1),
+    startY: 50,
+    theme: 'grid',
+    styles: { fontSize: 10, cellPadding: 3 },
+    headStyles: { fillColor: [6, 182, 212], textColor: 255 },
+    bodyStyles: { fillColor: [30, 41, 59], textColor: 255 },
+    alternateRowStyles: { fillColor: [15, 23, 42] }
+  });
+
+  // 类别级指标
+  const lastY = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(14);
+  doc.text('类别级指标详情', 14, lastY);
+  const categoryMetrics = [
+    ['目标类别', '精确率', '召回率', 'F1 分数', '样本数', '误检数'],
+    ['人员', '95.2%', '94.8%', '95.0%', '1258', '18'],
+    ['车辆', '93.5%', '92.1%', '92.8%', '896', '24'],
+    ['异常物体', '88.7%', '87.9%', '88.3%', '452', '36'],
+    ['环境异常', '89.2%', '88.5%', '88.8%', '635', '29']
+  ];
+  doc.autoTable({
+    head: [categoryMetrics[0]],
+    body: categoryMetrics.slice(1),
+    startY: lastY + 5,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 2.5 },
+    headStyles: { fillColor: [6, 182, 212], textColor: 255 },
+    bodyStyles: { fillColor: [30, 41, 59], textColor: 255 },
+    alternateRowStyles: { fillColor: [15, 23, 42] }
+  });
+
+  // 保存 PDF
+  doc.save(`模型训练指标报告_${new Date().toISOString().split('T')[0]}.pdf`);
+}
