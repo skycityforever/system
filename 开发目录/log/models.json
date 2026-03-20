@@ -1,0 +1,28 @@
+[
+  {
+    "modelName": "YOLOv8n - 目标检测",
+    "version": "v1.0.2",
+    "device": "边缘网关-01",
+    "size": 11.0,
+    "inferTime": 18.0,
+    "accuracy": 92.5,
+    "env": "Python3.12",
+    "desc": "",
+    "uploadTime": "2026-03-20 23:39:50",
+    "status": "unloaded",
+    "loadTime": "2026-03-21 00:05:01"
+  },
+  {
+    "modelName": "1",
+    "version": "1",
+    "device": "边缘网关-01",
+    "size": 1.0,
+    "inferTime": 1.0,
+    "accuracy": 1.0,
+    "env": "1",
+    "desc": "",
+    "uploadTime": "2026-03-21 00:11:26",
+    "status": "loaded",
+    "loadTime": "2026-03-21 00:11:59"
+  }
+]
