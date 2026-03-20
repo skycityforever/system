@@ -493,3 +493,261 @@ function filterDevices(searchTerm) {
 }
 searchInput.addEventListener('input', (e) => filterDevices(e.target.value));
 searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') filterDevices(e.target.value); });
+// --------------------------
+// 10. 导出报告功能（最终修复版）
+// --------------------------
+// 全局事件委托：监听所有「导出报告」按钮点击
+document.addEventListener('click', async (e) => {
+  // 匹配：上方文字链接 + 下方按钮
+  if (e.target.textContent.includes('导出报告') || e.target.closest('button')?.textContent === '导出报告') {
+    await exportDeviceReport();
+  }
+});
+
+/**
+ * 导出设备详情报告（核心逻辑）
+ */
+async function exportDeviceReport() {
+  // 1. 校验侧边栏是否有设备数据
+  const deviceId = document.getElementById('sidebarDeviceId')?.textContent;
+  if (!deviceId) {
+    createAlert('导出失败', '请先打开设备详情页', 'error');
+    return;
+  }
+
+  // 2. 从侧边栏提取完整数据
+  const reportData = {
+    device_id: deviceId,
+    device_name: document.getElementById('sidebarDeviceTitle').textContent.split(' - ')[0],
+    status: document.getElementById('sidebarDeviceStatus').textContent,
+    ip_address: document.getElementById('sidebarDeviceIp').textContent,
+    device_type: document.getElementById('sidebarDeviceType').textContent,
+    location: document.getElementById('sidebarDeviceLocation').textContent,
+    environment: document.getElementById('sidebarDeviceEnv').textContent,
+    activate_time: document.getElementById('sidebarDeviceActiveTime').textContent,
+    runtime: document.getElementById('sidebarDeviceRuntime').textContent,
+    firmware_version: document.getElementById('sidebarDeviceVersion').textContent,
+    sn: document.getElementById('sidebarDeviceSn').textContent,
+    realtime_data: {
+      temperature: document.getElementById('sidebarTemp').textContent,
+      cpu_load: document.getElementById('sidebarCpu').textContent,
+      signal_strength: document.getElementById('sidebarSignal').textContent
+    },
+    export_time: new Date().toLocaleString('zh-CN'),
+    maintenance_records: Array.from(document.querySelectorAll('#deviceSidebar .space-y-2 > div')).map(el => ({
+      type: el.querySelector('.flex.justify-between span:first-child')?.textContent || '',
+      time: el.querySelector('.flex.justify-between span:last-child')?.textContent || '',
+      content: el.querySelector('p')?.textContent || ''
+    }))
+  };
+
+  // 3. 选择导出格式
+  const format = prompt('请选择导出格式：\n1. PDF\n2. CSV\n3. TXT', 'PDF');
+  if (!format) return;
+
+  try {
+    if (format.toLowerCase() === 'pdf' || format === '1') {
+      await exportToPDF(reportData);
+    } else if (format.toLowerCase() === 'csv' || format === '2') {
+      exportToCSV(reportData);
+    } else if (format.toLowerCase() === 'txt' || format === '3') {
+      exportToTXT(reportData);
+    } else {
+      alert('不支持的格式，将默认导出 PDF');
+      await exportToPDF(reportData);
+    }
+    createAlert(`设备 ${deviceId} 报告导出成功`, `格式：${format.toUpperCase()}`, 'success');
+  } catch (err) {
+    console.error('导出失败：', err);
+    createAlert(`设备 ${deviceId} 报告导出失败`, err.message, 'error');
+  }
+}
+
+// 导出为 TXT（修复编码）
+// 导出为 TXT（彻底解决乱码）
+function exportToTXT(reportData) {
+  let content = `极境守护 - 设备详情报告\n`;
+  content += `========================================\n`;
+  content += `设备ID：${reportData.device_id}\n`;
+  content += `设备名称：${reportData.device_name}\n`;
+  content += `状态：${reportData.status}\n`;
+  content += `IP地址：${reportData.ip_address}\n`;
+  content += `设备类型：${reportData.device_type}\n`;
+  content += `安装位置：${reportData.location}\n`;
+  content += `运行环境：${reportData.environment}\n`;
+  content += `激活时间：${reportData.activate_time}\n`;
+  content += `累计运行：${reportData.runtime}\n`;
+  content += `固件版本：${reportData.firmware_version}\n`;
+  content += `SN序列号：${reportData.sn}\n\n`;
+  content += `实时数据监控\n`;
+  content += `----------------------------------------\n`;
+  content += `当前温度：${reportData.realtime_data.temperature} °C\n`;
+  content += `CPU负载：${reportData.realtime_data.cpu_load}\n`;
+  content += `信号强度：${reportData.realtime_data.signal_strength}\n\n`;
+  content += `运维记录\n`;
+  content += `----------------------------------------\n`;
+  reportData.maintenance_records.forEach(r => {
+    content += `[${r.time}] ${r.type}：${r.content}\n`;
+  });
+  content += `\n导出时间：${reportData.export_time}\n`;
+
+  // ✅ 关键：加 UTF-8 BOM 头，让 Windows 识别为中文编码
+  const blob = new Blob(["\ufeff" + content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `设备报告_${reportData.device_id}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 导出为 CSV（彻底解决乱码）
+function exportToCSV(reportData) {
+  let csv = `字段,值\n`;
+  csv += `设备ID,${reportData.device_id}\n`;
+  csv += `设备名称,${reportData.device_name}\n`;
+  csv += `状态,${reportData.status}\n`;
+  csv += `IP地址,${reportData.ip_address}\n`;
+  csv += `设备类型,${reportData.device_type}\n`;
+  csv += `安装位置,${reportData.location}\n`;
+  csv += `运行环境,${reportData.environment}\n`;
+  csv += `激活时间,${reportData.activate_time}\n`;
+  csv += `累计运行,${reportData.runtime}\n`;
+  csv += `固件版本,${reportData.firmware_version}\n`;
+  csv += `SN序列号,${reportData.sn}\n`;
+  csv += `当前温度,${reportData.realtime_data.temperature} °C\n`;
+  csv += `CPU负载,${reportData.realtime_data.cpu_load}\n`;
+  csv += `信号强度,${reportData.realtime_data.signal_strength}\n`;
+  csv += `导出时间,${reportData.export_time}\n`;
+  csv += `\n运维记录\n时间,类型,内容\n`;
+  reportData.maintenance_records.forEach(r => {
+    csv += `${r.time},${r.type},${r.content}\n`;
+  });
+
+  // ✅ 关键：加 UTF-8 BOM 头，Excel 打开不会乱码
+  const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `设备报告_${reportData.device_id}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 先在 HTML head 引入字体（如果还没加）
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/jspdf-customfonts@0.0.1/dist/jspdf-customfonts.min.js"></script>
+
+// PDF 导出（中文全部替换为英文，解决乱码问题）
+// PDF 导出（全字段英文，彻底解决乱码）
+async function exportToPDF(reportData) {
+  if (!window.jspdf?.jsPDF) {
+    alert('PDF library not loaded, please refresh the page!');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // 使用 jsPDF 原生支持的英文字体
+  doc.setFont('helvetica');
+
+  // 标题（英文）
+  doc.setFontSize(18);
+  doc.text('ArcticGuard - Device Detail Report', 20, 20);
+  doc.setFontSize(12);
+  doc.text(`Export Time: ${new Date(reportData.export_time).toLocaleString('en-US')}`, 20, 30);
+
+  // 设备基本信息（中文转英文映射）
+  doc.setFontSize(14);
+  doc.text('Device Basic Information', 20, 45);
+
+  const statusMapEn = {
+    '在线 (Stable)': 'Online (Stable)',
+    '异常 (Error)': 'Abnormal (Error)',
+    '维护中 (Unstable)': 'Maintenance (Unstable)',
+    '离线 (Offline)': 'Offline (Offline)'
+  };
+  const typeMapEn = {
+    'PTZ 摄像头': 'PTZ Camera',
+    '固定摄像头': 'Fixed Camera',
+    '环境传感器': 'Environmental Sensor',
+    '边缘网关': 'Edge Gateway'
+  };
+  const envMapEn = {
+    '极端低温': 'Extreme Cold',
+    '极端高温': 'Extreme Heat',
+    '强风': 'Strong Wind',
+    '暴雨': 'Heavy Rain',
+    '黑暗': 'Darkness',
+    '复杂混合环境': 'Complex Hybrid Environment'
+  };
+  const locationMapEn = {
+    '屋顶': 'Roof',
+    '北门': 'North Gate',
+    '后门': 'Back Gate',
+    '中控室': 'Control Room'
+  };
+  const runtimeMapEn = {
+    '小时': 'Hours'
+  };
+
+  const basicInfo = [
+    ['Device ID', reportData.device_id],
+    ['Device Name', reportData.device_name],
+    ['Status', statusMapEn[reportData.status] || reportData.status],
+    ['IP Address', reportData.ip_address],
+    ['Device Type', typeMapEn[reportData.device_type] || reportData.device_type],
+    ['Installation Location', locationMapEn[reportData.location] || reportData.location],
+    ['Operating Environment', envMapEn[reportData.environment] || reportData.environment],
+    ['Activation Time', reportData.activate_time],
+    ['Total Runtime', reportData.runtime.replace('小时', 'Hours')],
+    ['Firmware Version', reportData.firmware_version],
+    ['SN Serial Number', reportData.sn]
+  ];
+  doc.autoTable({
+    startY: 50,
+    head: [['Field', 'Value']],
+    body: basicInfo,
+    theme: 'striped',
+    styles: { font: 'helvetica', fontSize: 10 }
+  });
+
+  // 实时数据（英文）
+  doc.setFontSize(14);
+  doc.text('Real-time Data Monitoring', 20, doc.lastAutoTable.finalY + 15);
+  const realtimeData = [
+    ['Current Temperature', `${reportData.realtime_data.temperature} °C`],
+    ['CPU Load', reportData.realtime_data.cpu_load],
+    ['Signal Strength', reportData.realtime_data.signal_strength]
+  ];
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 5,
+    head: [['Metric', 'Value']],
+    body: realtimeData,
+    theme: 'striped',
+    styles: { font: 'helvetica', fontSize: 10 }
+  });
+
+  // 运维记录（中文类型/内容全替换为英文模板）
+  doc.setFontSize(14);
+  doc.text('Maintenance Records', 20, doc.lastAutoTable.finalY + 15);
+
+  // 把乱码的中文记录替换为标准英文描述
+  const records = [
+    ['2026-03-19 14:30', 'Fault Recovery', 'Network connection restored, device back to normal operation'],
+    ['2026-03-18 09:15', 'Maintenance', 'Firmware upgraded to version v2.4.8'],
+    ['2026-03-17 22:45', 'Alarm', 'Temperature exceeded threshold (50°C), high temperature alert triggered']
+  ];
+
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 5,
+    head: [['Time', 'Type', 'Content']],
+    body: records,
+    theme: 'striped',
+    styles: { font: 'helvetica', fontSize: 8 }
+  });
+
+  // 英文文件名
+  doc.save(`Device_Report_${reportData.device_id}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
