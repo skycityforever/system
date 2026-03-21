@@ -1,10 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>极境守护 - 历史溯源</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+        .glass-panel { background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(12px); border: 1px solid rgba(56, 189, 248, 0.2); }
+        body { background-color: #020617; color: #e2e8f0; }
+        .tab-btn.active { border-color: #22d3ee; color: #22d3ee; background: rgba(34, 211, 238, 0.1); }
+    </style>
 </head>
-<body>
+
+<body class="min-h-screen">
+
+
+<nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
+  <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">历史溯源</span></span></div>
+  <div class="flex items-center gap-8 text-sm">
+    <a class="hover:text-cyan-400" href="#">目标检测</a><a class="hover:text-cyan-400" href="visual_dashboard.html">监控中心</a><a class="hover:text-cyan-400" href="history.html">历史溯源</a><a class="hover:text-cyan-400" href="historical_data_analysis.html">数据分析</a><a class="hover:text-cyan-400" href="model_management.html">模型管理</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="edge_device_management.html">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="user_center.html"><span class="iconify" data-icon="solar:user-bold"></span><span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span></a>
+  </div>
+</nav>
+
+
 
 </body>
 </html>
