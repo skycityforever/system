@@ -1,0 +1,70 @@
+/* 全局样式与组件 */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+body {
+    background-color: #020617;
+    color: #e2e8f0;
+}
+.tab-btn {
+    transition: all 0.2s ease;
+}
+.tab-btn.active {
+    border-color: #22d3ee;
+    color: #22d3ee;
+    background: rgba(34, 211, 238, 0.1);
+}
+.stat-card {
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.data-table th, .data-table td {
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 0.75rem;
+    text-align: center;
+}
+.data-table th {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* 自定义滚动条样式（保留） */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.6);
+    border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.8);
+}
+
+/* 新增模型下拉菜单样式 */
+#modelDropdown {
+    transition: all 0.25s ease;
+    transform-origin: top right;
+}
+.model-card {
+    transition: all 0.2s ease;
+}
+.model-card:hover {
+    border-color: rgba(34, 211, 238, 0.4);
+}
+
+/* 算法模型库 - 固定内部高度，外框大小保持原始不变（核心） */
+.model-list-container {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+}
