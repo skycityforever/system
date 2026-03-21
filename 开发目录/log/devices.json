@@ -40,5 +40,19 @@
         "status": "online",
         "submit_time": "2026-03-20 11:18:46",
         "id": 3
+    },
+    {
+        "device_id": "NORTH——GATE",
+        "device_name": "北门摄像头",
+        "ip_address": "192.16.1.1",
+        "device_type": "ptz_camera",
+        "location": "北门",
+        "environment": "normal",
+        "description": "",
+        "activate_time": "2026/03/21 09:02:59",
+        "total_usage_hours": "0",
+        "status": "online",
+        "submit_time": "2026-03-21 09:03:04",
+        "id": 4
     }
 ]
