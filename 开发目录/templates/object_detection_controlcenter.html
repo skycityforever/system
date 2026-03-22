@@ -35,6 +35,47 @@
   background-color: rgba(34, 211, 238, 0.05);
 }
 #previewContainer { transition: all 0.3s ease; }
+
+/* 视频控制栏样式 */
+#videoControlBar {
+  transition: all 0.3s ease;
+}
+#videoControlBar button {
+  transition: all 0.2s ease;
+}
+#frameIntervalInput::-webkit-outer-spin-button,
+#frameIntervalInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#frameIntervalInput {
+  -moz-appearance: textfield;
+}
+
+/* 摄像头模块样式 */
+#cameraPreviewContainer {
+  transition: all 0.3s ease;
+  min-height: 500px;
+}
+#cameraVideo {
+  transform: scaleX(-1); /* 镜像显示，更符合自拍习惯 */
+  background: #000;
+}
+#cameraCanvas {
+  transform: scaleX(-1); /* 与视频同步镜像 */
+  pointer-events: none;
+}
+#cameraControlBar button {
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+/* 实时统计面板样式 */
+.stats-panel {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+}
 </style>
 </head>
 <body class="min-h-screen bg-[#020617]">
@@ -264,12 +305,14 @@
                     <span class="iconify text-cyan-400" data-icon="solar:play-bold"></span> 在线模拟演示
                 </h3>
                 <div class="flex gap-4">
-                    <button class="tab-btn active px-4 py-1 text-sm border-t-2">图片分析</button>
+                    <button class="tab-btn active px-4 py-1 text-sm border-t-2" id="imageTabBtn">图片分析</button>
                     <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" id="videoTabBtn">视频流推理</button>
                     <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" id="cameraTabBtn">摄像头实时</button>
                 </div>
             </div>
-            <div class="flex-1 grid grid-cols-2 gap-6 pb-6">
+
+            <!-- 图片/视频模式：保留原左右布局 -->
+            <div id="imageVideoLayout" class="flex-1 grid grid-cols-2 gap-6 pb-6">
                 <div class="flex flex-col gap-3">
                     <div id="sampleDropArea" class="flex-1 border-2 border-dashed border-cyan-500/50 rounded-xl relative group overflow-hidden bg-slate-900 flex items-center justify-center cursor-pointer hover:border-cyan-500 transition-colors">
                         <input type="file" id="fileInput" accept="image/*,video/mp4,.bin" class="hidden" />
@@ -290,7 +333,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
-                    <div class="flex-1 glass-panel rounded-xl overflow-hidden relative">
+                    <div id="originalPreviewContainer" class="flex-1 glass-panel rounded-xl overflow-hidden relative">
                         <img id="resultPreviewImg" alt="Result simulation feed" class="w-full h-full object-cover opacity-30" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/10e2aed0c56c4c85bc1b59c0977f9ea4.jpg"/>
                         <div class="absolute inset-0 bg-slate-900/60"></div>
                         <div id="resultBbox" class="absolute top-1/4 left-1/4 w-32 h-48 border-2 border-cyan-400 shadow-[0_0_10px_#22d3ee]">
@@ -338,6 +381,98 @@
                     <button id="startInferenceBtn" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-900/20">开始模拟推理</button>
                 </div>
             </div>
+
+            <!-- 摄像头模式：全屏展示 -->
+            <div id="cameraLayout" class="hidden flex-1 flex flex-col gap-4 pb-6">
+                <!-- 摄像头实时预览区域（全屏） -->
+                <div id="cameraPreviewContainer" class="flex-1 glass-panel rounded-xl overflow-hidden relative flex flex-col items-center justify-center">
+                    <!-- 未启动时状态 -->
+                    <div id="cameraIdleState" class="text-center">
+                        <span class="iconify text-6xl text-slate-500 mb-4" data-icon="solar:camera-linear"></span>
+                        <p class="text-lg text-slate-300 mb-6">摄像头实时监控画面</p>
+                        <button id="startCameraBtn" class="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all">
+                            <span class="iconify" data-icon="solar:play-bold"></span>
+                            <span>启动摄像头</span>
+                        </button>
+                    </div>
+
+                    <!-- 已启动时状态（实时画面+检测框） -->
+                    <div id="cameraActiveState" class="hidden w-full h-full relative">
+                        <video id="cameraVideo" class="w-full h-full object-cover" autoplay playsinline></video>
+                        <canvas id="cameraCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                        <!-- 检测信息悬浮层 -->
+                        <div class="absolute top-4 right-4 bg-slate-900/80 rounded-lg p-3 border border-cyan-500/30">
+                            <p class="text-xs text-cyan-400 font-mono mb-1">实时检测中</p>
+                            <p class="text-xs text-green-400 font-mono">FPS: <span id="cameraFps">30</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 控制栏与统计区域 -->
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                    <!-- 控制按钮 -->
+                    <div class="flex items-center gap-3">
+                        <button id="cameraStartDetectBtn" class="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-lg transition-all">
+                            <span class="iconify" data-icon="solar:play-bold"></span>
+                            <span>开始检测</span>
+                        </button>
+                        <button id="cameraStopDetectBtn" class="hidden flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg shadow-lg transition-all">
+                            <span class="iconify" data-icon="solar:stop-bold"></span>
+                            <span>停止检测</span>
+                        </button>
+                        <button id="cameraCaptureBtn" class="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg border border-slate-600 transition-all">
+                            <span class="iconify" data-icon="solar:camera-bold"></span>
+                            <span>拍照</span>
+                        </button>
+                    </div>
+
+                    <!-- 实时统计面板 -->
+                    <div class="stats-panel flex items-center gap-8">
+                        <div class="text-center">
+                            <p class="text-xs text-slate-400 mb-1">总检测目标数</p>
+                            <p class="text-xl text-cyan-400 font-bold" id="totalDetectCount">0</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-slate-400 mb-1">当前帧目标数</p>
+                            <p class="text-xl text-green-400 font-bold" id="currentFrameCount">0</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-slate-400 mb-1">平均置信度</p>
+                            <p class="text-xl text-orange-400 font-bold" id="avgConfidence">0%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频流控制栏（仅在视频 Tab 显示） -->
+            <div id="videoControlBar" class="hidden glass-panel rounded-xl p-4 mt-4 flex items-center gap-6">
+              <!-- 开始/停止按钮 -->
+              <button id="videoStartStopBtn" class="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all">
+                <span class="iconify" data-icon="solar:play-bold"></span>
+                <span>开始</span>
+              </button>
+
+              <!-- 导出帧按钮 -->
+              <button id="exportFrameBtn" class="flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg border border-slate-600 transition-all">
+                <span class="iconify" data-icon="solar:floppy-disk-bold"></span>
+                <span>导出帧</span>
+              </button>
+
+              <!-- 每N帧检测一次 -->
+              <div class="flex items-center gap-3 ml-auto">
+                <span class="text-sm text-slate-300">每N帧检测一次:</span>
+                <div class="flex items-center bg-slate-900 border border-cyan-500/50 rounded-md overflow-hidden">
+                  <button id="decrementFrameBtn" class="px-2 py-1 hover:bg-slate-800 text-cyan-400">
+                    <span class="iconify" data-icon="solar:alt-arrow-down-bold"></span>
+                  </button>
+                  <input id="frameIntervalInput" type="number" min="1" value="1" class="w-12 bg-transparent text-center text-white text-sm outline-none" readonly>
+                  <button id="incrementFrameBtn" class="px-2 py-1 hover:bg-slate-800 text-cyan-400">
+                    <span class="iconify" data-icon="solar:alt-arrow-up-bold"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="glass-panel rounded-xl p-4 bg-black/40 border-slate-700">
                 <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase italic tracking-widest">实时推理日志 (CONSOLE)</h4>
                 <div id="consoleLog" class="font-mono text-[10px] text-cyan-500/80 h-24 overflow-y-auto space-y-1">
@@ -368,7 +503,7 @@
             <div id="tab-stats" class="tab-content">
                 <div class="grid grid-cols-4 gap-4 mb-6">
                     <div class="stat-card text-center">
-                        <div id="totalDetectCount" class="text-3xl font-bold text-cyan-400">0</div>
+                        <div id="totalDetectCountTab" class="text-3xl font-bold text-cyan-400">0</div>
                         <div class="text-xs text-slate-400 mt-1">总检测数</div>
                     </div>
                     <div class="stat-card text-center">
@@ -376,7 +511,7 @@
                         <div class="text-xs text-slate-400 mt-1">类别数</div>
                     </div>
                     <div class="stat-card text-center">
-                        <div id="avgConfidence" class="text-3xl font-bold text-cyan-300">0.00</div>
+                        <div id="avgConfidenceTab" class="text-3xl font-bold text-cyan-300">0.00</div>
                         <div class="text-xs text-slate-400 mt-1">平均置信度</div>
                     </div>
                     <div class="stat-card text-center">
