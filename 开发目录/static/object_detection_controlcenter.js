@@ -1,15 +1,11 @@
 // Tab 切换逻辑
 function switchTab(tabName) {
-    // 隐藏所有面板
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    // 重置所有按钮样式
     document.querySelectorAll('.tab-btn').forEach(el => {
         el.classList.remove('active');
         el.classList.add('border-transparent');
     });
-    // 显示目标面板
     document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-    // 激活目标按钮
     const activeBtn = event.currentTarget;
     activeBtn.classList.add('active');
     activeBtn.classList.remove('border-transparent');
@@ -39,13 +35,10 @@ function createAlert(title, content, type = 'success') {
     }
 }
 
-// ==============================================
-// 所有页面交互逻辑（整合原HTML内的全部JS）
-// ==============================================
 document.addEventListener('DOMContentLoaded', function() {
     const addModelBtn = document.getElementById('addModelBtn');
     const modelDropdown = document.getElementById('modelDropdown');
-    const modelList = document.querySelector('.space-y-4'); // 模型列表容器
+    const modelList = document.querySelector('.space-y-4');
     const options = document.querySelectorAll('.model-option');
     const sampleDropArea = document.getElementById('sampleDropArea');
     const fileInput = document.getElementById('fileInput');
@@ -57,37 +50,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoTabBtn = document.getElementById('videoTabBtn');
     const cameraTabBtn = document.getElementById('cameraTabBtn');
 
-    // ==============================================
-    // 1. 新增模型 - 下拉菜单 + 自动添加到模型列表功能
-    // ==============================================
+    // 1. 新增模型下拉菜单
     if(addModelBtn && modelDropdown) {
-        // 点击按钮显示/隐藏下拉
         addModelBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             modelDropdown.classList.toggle('hidden');
         });
-
-        // 点击外部关闭下拉
-        document.addEventListener('click', () => {
-            modelDropdown.classList.add('hidden');
-        });
-
-        // 点击菜单内部不关闭
-        modelDropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // 选择模型 → 自动添加到列表（整合原逻辑+新增模型功能）
+        document.addEventListener('click', () => modelDropdown.classList.add('hidden'));
+        modelDropdown.addEventListener('click', (e) => e.stopPropagation());
         options.forEach(option => {
             option.addEventListener('click', () => {
                 const name = option.dataset.name;
                 const desc = option.dataset.desc;
                 const fps = option.dataset.fps;
                 const prec = option.dataset.prec;
-
                 modelDropdown.classList.add('hidden');
-
-                // 新增模型到列表
                 const newModel = `
                 <div class="p-4 rounded-lg bg-slate-800 border border-cyan-500/30">
                     <div class="flex justify-between items-start mb-2">
@@ -102,54 +79,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 `;
                 modelList.insertAdjacentHTML('afterbegin', newModel);
-
-                // 告警提示（使用统一的createAlert函数）
                 createAlert('模型导入成功', `已成功导入模型「${name}」`, 'success');
             });
         });
     }
 
-    // ==============================================
-    // 2. 样本上传与预览功能（完整整合）
-    // ==============================================
+    // 2. 样本上传与预览
     if (sampleDropArea && fileInput) {
-        // 点击区域 → 打开文件选择器（替换原提示逻辑）
-        sampleDropArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // 选择文件后处理
+        sampleDropArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
             handleFileUpload(file);
         });
-
-        // 拖拽事件处理
         sampleDropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             sampleDropArea.classList.add('border-cyan-400', 'bg-cyan-500/5');
         });
-        sampleDropArea.addEventListener('dragleave', () => {
-            sampleDropArea.classList.remove('border-cyan-400', 'bg-cyan-500/5');
-        });
+        sampleDropArea.addEventListener('dragleave', () => sampleDropArea.classList.remove('border-cyan-400', 'bg-cyan-500/5'));
         sampleDropArea.addEventListener('drop', (e) => {
             e.preventDefault();
             sampleDropArea.classList.remove('border-cyan-400', 'bg-cyan-500/5');
             const file = e.dataTransfer.files?.[0];
             if (file) handleFileUpload(file);
         });
-
-        // 处理文件上传与预览
         function handleFileUpload(file) {
-            // 类型校验
             const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'video/mp4'];
             if (!allowedTypes.includes(file.type) && !file.name.endsWith('.bin')) {
                 createAlert('文件格式不支持', '仅支持 JPG/PNG/MP4/BIN 格式文件', 'error');
                 return;
             }
-
-            // 显示预览（仅图片）
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -159,21 +118,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 reader.readAsDataURL(file);
             } else {
-                // 视频/雷达文件只显示文件名
                 previewContainer.classList.remove('hidden');
                 previewImg.style.display = 'none';
                 fileName.textContent = file.name;
             }
-
-            // 告警提示
             createAlert('样本加载成功', `已加载文件：${file.name}，可开始推理`, 'success');
         }
     }
 
-    // ==============================================
-    // 3. 页面交互按钮事件（整合所有按钮逻辑）
-    // ==============================================
-    // 加载样本按钮 → 弹窗提示
+    // 3. 加载样本按钮
     loadSampleBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const sample = btn.dataset.sample;
@@ -181,26 +134,149 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 开始模拟推理按钮 → 弹窗提示（增加模拟推理完成逻辑）
-    if (startInferenceBtn) {
-        startInferenceBtn.addEventListener('click', () => {
-            createAlert('推理启动', '正在加载模型并执行推理，请查看实时日志面板', 'success');
-            // 模拟推理完成
-            setTimeout(() => {
-                createAlert('推理完成', '成功检测到 1 个目标，置信度 94.2%', 'success');
-            }, 1500);
-        });
-    }
-
-    // 视频流/摄像头 Tab → 开发中提示
+    // 4. 视频/摄像头 Tab
     if (videoTabBtn) {
-        videoTabBtn.addEventListener('click', () => {
-            createAlert('功能开发中', '视频流推理功能正在开发，敬请期待', 'warning');
-        });
+        videoTabBtn.addEventListener('click', () => createAlert('功能开发中', '视频流推理功能正在开发，敬请期待', 'warning'));
     }
     if (cameraTabBtn) {
-        cameraTabBtn.addEventListener('click', () => {
-            createAlert('功能开发中', '摄像头实时推理功能正在开发，敬请期待', 'warning');
+        cameraTabBtn.addEventListener('click', () => createAlert('功能开发中', '摄像头实时推理功能正在开发，敬请期待', 'warning'));
+    }
+
+    // 5. 开始推理按钮（核心逻辑）
+    if (startInferenceBtn) {
+        startInferenceBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files?.[0];
+            if (!file) {
+                createAlert('推理失败', '请先上传或选择样本图片', 'error');
+                return;
+            }
+            createAlert('推理启动', '正在加载模型并执行推理，请稍候...', 'info');
+            const formData = new FormData();
+            formData.append('image', file);
+            try {
+                const response = await fetch('http://localhost:5000/api/detect', {method: 'POST', body: formData, mode: 'cors' });
+                const data = await response.json();
+                if (data.success) {
+                    // 更新 Result 面板文本
+                    const resultTextPanel = document.getElementById('resultTextPanel');
+                    resultTextPanel.innerHTML = data.result_text.replace(/\n/g, '<br>');
+                    // 更新预览图
+                    const resultPreviewImg = document.getElementById('resultPreviewImg');
+                    resultPreviewImg.src = data.result_image_url;
+                    resultPreviewImg.style.opacity = '1';
+                    // 更新检测框标签
+                    const resultBboxLabel = document.getElementById('resultBboxLabel');
+                    if (data.detect_count > 0) {
+                        const firstCls = data.classes[0];
+                        resultBboxLabel.textContent = `${firstCls.class} ${firstCls.confidence}%`;
+                    }
+                    // 更新延迟和准确率
+                    const resultLatency = document.getElementById('resultLatency');
+                    const resultAcc = document.getElementById('resultAcc');
+                    resultLatency.textContent = `LATENCY: ${data.latency || '8.5'}ms`;
+                    resultAcc.textContent = `ACC: ${(data.avg_conf / 100).toFixed(3)}`;
+                    // 更新状态点
+                    const resultStatusDots = document.getElementById('resultStatusDots');
+                    resultStatusDots.innerHTML = '';
+                    for (let i = 0; i < data.detect_count; i++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'w-2 h-2 rounded-full bg-green-500';
+                        resultStatusDots.appendChild(dot);
+                    }
+                    // 更新统计摘要
+                    document.getElementById('totalDetectCount').textContent = data.detect_count;
+                    document.getElementById('classCount').textContent = new Set(data.classes.map(c => c.class)).size;
+                    document.getElementById('avgConfidence').textContent = data.avg_conf.toFixed(2);
+                    document.getElementById('maxConfidence').textContent = Math.max(...data.classes.map(c => c.confidence)).toFixed(2);
+                    // 更新类别数量表
+                    const classCountTable = document.getElementById('classCountTable');
+                    classCountTable.innerHTML = '';
+                    const classMap = {};
+                    data.classes.forEach(c => classMap[c.class] = (classMap[c.class] || 0) + 1);
+                    Object.entries(classMap).forEach(([cls, cnt]) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${cls}</td><td>${cnt}</td><td>${((cnt / data.detect_count) * 100).toFixed(1)}%</td>`;
+                        classCountTable.appendChild(tr);
+                    });
+                    // 更新详细数据
+                    const detailTable = document.getElementById('detailTable');
+                    detailTable.innerHTML = '';
+                    data.classes.forEach((c, i) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${i+1}</td>
+                            <td>${c.class}</td>
+                            <td>${c.confidence}%</td>
+                            <td>${c.bbox[0].toFixed(0)}</td>
+                            <td>${c.bbox[1].toFixed(0)}</td>
+                            <td>${c.bbox[2].toFixed(0)}</td>
+                            <td>${c.bbox[3].toFixed(0)}</td>
+                            <td>${((c.bbox[2]-c.bbox[0])*(c.bbox[3]-c.bbox[1])).toFixed(0)}</td>
+                        `;
+                        detailTable.appendChild(tr);
+                    });
+                    // 更新控制台日志
+                    const consoleLog = document.getElementById('consoleLog');
+                    consoleLog.innerHTML = `<p>&gt; [AI] 检测完成，共识别到 ${data.detect_count} 个目标</p>` +
+                        data.classes.map((c, i) => `<p>&gt; [AI] 目标 ${i+1}: ${c.class} (置信度 ${c.confidence}%)</p>`).join('') +
+                        `<p class="animate-pulse">&gt; _</p>`;
+                    createAlert('推理完成', `成功检测到 ${data.detect_count} 个目标，平均置信度 ${data.avg_conf}%`, 'success');
+                } else {
+                    createAlert('推理失败', data.msg || '后端处理异常', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                createAlert('网络错误', '无法连接到推理服务，请检查后端', 'error');
+            }
         });
     }
 });
+// 获取所有检测记录
+async function loadDetectionRecords() {
+  try {
+    const response = await fetch('/api/detection_records');
+    const data = await response.json();
+    if (data.success) {
+      renderRecords(data.records);
+    }
+  } catch (error) {
+    console.error('获取记录失败:', error);
+  }
+}
+
+// 渲染记录列表
+function renderRecords(records) {
+  const container = document.getElementById('records-container');
+  if (!container) return;
+
+  container.innerHTML = records.map(record => `
+    <div class="record-card glass-panel p-4 mb-4 rounded-lg">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-cyan-400 font-bold">ID: ${record.id}</span>
+        <span class="text-slate-400 text-sm">${record.detect_time}</span>
+      </div>
+      <div class="mb-2">
+        <span class="text-white">检测类型: </span>
+        <span class="text-cyan-400">${record.detect_type}</span>
+      </div>
+      <div class="mb-2">
+        <span class="text-white">检测结果:</span>
+        <ul class="text-slate-300 text-sm mt-1">
+          ${record.detect_results.map(res => `
+            <li>• ${res.class} (置信度: ${res.confidence}%)</li>
+          `).join('')}
+        </ul>
+      </div>
+      ${record.llm_suggestion ? `
+        <div>
+          <span class="text-white">大模型建议:</span>
+          <p class="text-slate-300 text-sm mt-1">${record.llm_suggestion}</p>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+// 页面加载时获取记录
+document.addEventListener('DOMContentLoaded', loadDetectionRecords);

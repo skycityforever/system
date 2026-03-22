@@ -7,13 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- 引入外部CSS -->
 <link rel="stylesheet" href="../static/object_detection_controlcenter.css">
 <style>
-/* 告警提示样式 - 导航栏下方 */
 .alert-item {
   position: fixed;
-  top: 72px; /* 导航栏下方8px */
+  top: 72px;
   right: 32px;
   background: #1e293b;
   border-left: 4px solid #06b6d4;
@@ -28,74 +26,49 @@
 .alert-item.success { border-left-color: #22c55e; }
 .alert-item.warning { border-left-color: #eab308; }
 .alert-item.error { border-left-color: #ef4444; }
-
-/* 导航栏防重叠样式 */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-.whitespace-nowrap {
-    white-space: nowrap;
-}
-.flex-shrink-0 {
-    flex-shrink: 0;
-}
-
-/* 拖拽上传区域样式 */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.whitespace-nowrap { white-space: nowrap; }
+.flex-shrink-0 { flex-shrink: 0; }
 #sampleDropArea.dragover {
   border-color: #22d3ee;
   background-color: rgba(34, 211, 238, 0.05);
 }
-#previewContainer {
-  transition: all 0.3s ease;
-}
+#previewContainer { transition: all 0.3s ease; }
 </style>
 </head>
 <body class="min-h-screen">
-
-<!-- 告警容器 -->
 <div class="alert-container" id="alertContainer"></div>
-
-<!-- 导航栏 -->
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
-  <!-- 左侧 Logo + 标题（固定不换行） -->
   <div class="flex items-center gap-3 flex-shrink-0">
     <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
     <span class="text-xl font-bold tracking-wider text-white whitespace-nowrap">
       POLAR GUARD <span class="text-cyan-400 text-sm">目标检测中心</span>
     </span>
   </div>
-  <!-- 右侧导航链接（允许自动换行/溢出隐藏） -->
   <div class="flex items-center gap-6 text-sm overflow-x-auto no-scrollbar">
-    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="object_detection_controlcenter.html">目标检测</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="visual_dashboard.html">监控中心</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="history.html">历史溯源</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="historical_data_analysis.html">数据分析</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="model_management.html">模型管理</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="edge_device_management.html">设备管理</a>
-    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="user_center.html">
+    <a class="nav-link " href="/">导航中心</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="/object_detection_controlcenter">目标检测</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/visual_dashboard">监控中心</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/history">历史溯源</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/historical_data_analysis">数据分析</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/model_management">模型管理</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/edge_device_management">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="/user_center">
       <span class="iconify" data-icon="solar:user-bold"></span>
       <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
     </a>
   </div>
 </nav>
-
 <main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto grid grid-cols-12 gap-6">
-    <!-- 左侧：模型库 + 可滚动边缘状态 + 性能监控 -->
     <div class="col-span-12 lg:col-span-4 flex flex-col gap-6 h-full">
-        <!-- 算法模型库（外框高度与未加滚动条时完全一致） -->
         <div class="glass-panel p-6 rounded-xl">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold">算法模型库</h3>
-                <!-- 新增模型按钮 + 下拉菜单 -->
                 <div class="relative inline-block">
                     <button id="addModelBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded flex items-center gap-1 text-xs">
                         <span class="iconify" data-icon="solar:upload-bold"></span> 新增模型
                     </button>
-                    <!-- 下拉列表（默认隐藏） -->
                     <div id="modelDropdown" class="hidden absolute right-0 mt-2 w-64 glass-panel rounded-lg shadow-lg z-50">
                         <div class="p-2 text-xs text-slate-400 px-3 py-2">选择模型类型</div>
                         <div class="model-option px-3 py-2 hover:bg-cyan-500/20 cursor-pointer text-sm"
@@ -122,7 +95,6 @@
                     </div>
                 </div>
             </div>
-            <!-- 模型列表：固定最大高度，超出滚动，外框不变 -->
             <div class="space-y-4 overflow-y-auto custom-scrollbar pr-1 max-h-[220px]">
                 <div class="p-4 rounded-lg bg-cyan-400/10 border border-cyan-400/50 group hover:bg-cyan-400/20 cursor-pointer transition-all">
                     <div class="flex justify-between items-start mb-2">
@@ -159,7 +131,6 @@
                 </div>
             </div>
         </div>
-        <!-- 可滚动边缘端推送状态（拉长高度） -->
         <div class="glass-panel p-6 rounded-xl flex-1 min-h-[320px] max-h-[420px] flex flex-col">
             <h3 class="text-lg font-bold mb-4">边缘端推送状态</h3>
             <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
@@ -230,7 +201,6 @@
                 </div>
             </div>
         </div>
-        <!-- 模型性能监控模块 -->
         <div class="glass-panel p-6 rounded-xl">
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                 <span class="iconify text-cyan-400" data-icon="solar:chart-line-bold"></span>模型性能监控
@@ -287,10 +257,7 @@
             </div>
         </div>
     </div>
-
-    <!-- 右侧：在线演示 + 识别结果 -->
     <div class="col-span-12 lg:col-span-8 space-y-6">
-        <!-- 在线模拟演示 -->
         <div class="glass-panel p-6 rounded-xl min-h-[400px] flex flex-col">
             <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
                 <h3 class="text-xl font-bold flex items-center gap-2">
@@ -324,25 +291,24 @@
                 </div>
                 <div class="flex flex-col gap-3">
                     <div class="flex-1 glass-panel rounded-xl overflow-hidden relative">
-                        <img alt="Result simulation feed" class="w-full h-full object-cover opacity-30" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/10e2aed0c56c4c85bc1b59c0977f9ea4.jpg"/>
+                        <img id="resultPreviewImg" alt="Result simulation feed" class="w-full h-full object-cover opacity-30" src="https://modao.cc/agent-py/media/generated_images/2026-03-18/10e2aed0c56c4c85bc1b59c0977f9ea4.jpg"/>
                         <div class="absolute inset-0 bg-slate-900/60"></div>
-                        <div class="absolute top-1/4 left-1/4 w-32 h-48 border-2 border-cyan-400 shadow-[0_0_10px_#22d3ee]">
-                            <div class="absolute -top-5 left-0 px-1 bg-cyan-400 text-black text-[10px] font-bold">HUMAN 94.2%</div>
+                        <div id="resultBbox" class="absolute top-1/4 left-1/4 w-32 h-48 border-2 border-cyan-400 shadow-[0_0_10px_#22d3ee]">
+                            <div id="resultBboxLabel" class="absolute -top-5 left-0 px-1 bg-cyan-400 text-black text-[10px] font-bold">HUMAN 94.2%</div>
                         </div>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <span class="iconify text-white/20 text-6xl" data-icon="solar:clapperboard-play-linear"></span>
                         </div>
                         <div class="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
-                            <span class="text-[10px] text-cyan-400 font-mono">LATENCY: 8.5ms</span>
-                            <span class="text-[10px] text-green-400 font-mono">ACC: 0.982</span>
+                            <span id="resultLatency" class="text-[10px] text-cyan-400 font-mono">LATENCY: 8.5ms</span>
+                            <span id="resultAcc" class="text-[10px] text-green-400 font-mono">ACC: 0.982</span>
                         </div>
-                        <!-- 模拟 Result 面板 -->
                         <div class="absolute top-2 right-2 w-[45%] h-[90%] bg-slate-950/90 rounded border border-slate-700 p-2 overflow-hidden">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-xs font-bold text-white">Result</span>
                                 <span class="iconify text-slate-500" data-icon="solar:maximize-linear"></span>
                             </div>
-                            <div class="text-[10px] text-slate-300 font-mono leading-relaxed opacity-80">
+                            <div id="resultTextPanel" class="text-[10px] text-slate-300 font-mono leading-relaxed opacity-80">
                                 Recvieclos all aage.Se.lcs.de.fal<br>
                                 Teemorial yib:<br>
                                 Tuevieis.sai.50.nss_racts.t/<br>
@@ -358,7 +324,7 @@
                                 O Neel<br>
                                 P
                             </div>
-                            <div class="absolute right-2 top-10 bottom-2 flex flex-col gap-2">
+                            <div id="resultStatusDots" class="absolute right-2 top-10 bottom-2 flex flex-col gap-2">
                                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
                                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
                                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
@@ -374,7 +340,7 @@
             </div>
             <div class="glass-panel rounded-xl p-4 bg-black/40 border-slate-700">
                 <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase italic tracking-widest">实时推理日志 (CONSOLE)</h4>
-                <div class="font-mono text-[10px] text-cyan-500/80 h-24 overflow-y-auto space-y-1">
+                <div id="consoleLog" class="font-mono text-[10px] text-cyan-500/80 h-24 overflow-y-auto space-y-1">
                     <p>&gt; [SYSTEM] Initializing ViT-Polaris Core...</p>
                     <p>&gt; [SYSTEM] Loading weights from /hub/polaris_v42.pth</p>
                     <p>&gt; [GPU] VRAM usage: 4.2GB / 24GB</p>
@@ -386,40 +352,35 @@
                 </div>
             </div>
         </div>
-
-        <!-- 识别结果模块 -->
         <div class="glass-panel p-6 rounded-xl">
             <h3 class="text-xl font-bold mb-4 text-center">识别结果</h3>
-            <!-- Tab 切换栏 -->
             <div class="flex gap-2 mb-4 border-b border-slate-700 pb-2">
                 <button class="tab-btn active px-4 py-2 text-sm border-t-2 rounded-t-lg" onclick="switchTab('stats')">
                     <span class="iconify mr-1" data-icon="solar:chart-line-bold"></span>统计摘要
                 </button>
                 <button class="tab-btn px-4 py-2 text-sm border-t-2 border-transparent hover:text-cyan-400 rounded-t-lg" onclick="switchTab('details')">
-                    <span class="iconify mr-1" data-icon="solar:document-text-bold"></span>详细数据
+                    <span class="iconify mr-1" ></span>详细数据
                 </button>
                 <button class="tab-btn px-4 py-2 text-sm border-t-2 border-transparent hover:text-cyan-400 rounded-t-lg" onclick="switchTab('confidence')">
                     <span class="iconify mr-1" data-icon="solar:bar-chart-bold-duotone"></span>置信度分布
                 </button>
             </div>
-
-            <!-- 统计摘要面板 -->
             <div id="tab-stats" class="tab-content">
                 <div class="grid grid-cols-4 gap-4 mb-6">
                     <div class="stat-card text-center">
-                        <div class="text-3xl font-bold text-cyan-400">0</div>
+                        <div id="totalDetectCount" class="text-3xl font-bold text-cyan-400">0</div>
                         <div class="text-xs text-slate-400 mt-1">总检测数</div>
                     </div>
                     <div class="stat-card text-center">
-                        <div class="text-3xl font-bold text-purple-400">0</div>
+                        <div id="classCount" class="text-3xl font-bold text-purple-400">0</div>
                         <div class="text-xs text-slate-400 mt-1">类别数</div>
                     </div>
                     <div class="stat-card text-center">
-                        <div class="text-3xl font-bold text-cyan-300">0.00</div>
+                        <div id="avgConfidence" class="text-3xl font-bold text-cyan-300">0.00</div>
                         <div class="text-xs text-slate-400 mt-1">平均置信度</div>
                     </div>
                     <div class="stat-card text-center">
-                        <div class="text-3xl font-bold text-orange-400">0.00</div>
+                        <div id="maxConfidence" class="text-3xl font-bold text-orange-400">0.00</div>
                         <div class="text-xs text-slate-400 mt-1">最高置信度</div>
                     </div>
                 </div>
@@ -433,7 +394,7 @@
                                 <th>占比</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="classCountTable">
                             <tr>
                                 <td colspan="3" class="text-slate-500">暂无检测数据</td>
                             </tr>
@@ -441,8 +402,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- 详细数据面板 -->
             <div id="tab-details" class="tab-content hidden">
                 <div class="glass-panel p-4 rounded-lg min-h-[300px]">
                     <table class="data-table">
@@ -458,7 +417,7 @@
                                 <th>面积</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="detailTable">
                             <tr>
                                 <td colspan="8" class="text-slate-500">暂无检测数据</td>
                             </tr>
@@ -466,8 +425,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- 置信度分布面板 -->
             <div id="tab-confidence" class="tab-content hidden">
                 <div class="glass-panel p-4 rounded-lg min-h-[300px] flex items-center justify-center">
                     <p class="text-slate-500">置信度分布图表区域（可后续接入 Chart.js 绘制直方图/分布图）</p>
@@ -476,9 +433,6 @@
         </div>
     </div>
 </main>
-
-<!-- 核心功能JS -->
 <script src="../static/object_detection_controlcenter.js"></script>
-
 </body>
 </html>

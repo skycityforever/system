@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<link rel="stylesheet" href="/开发目录/static/edge_device_management.css">
+<link rel="stylesheet" href="../static/edge_device_management.css">
 </head>
 
 <body class="min-h-screen">
@@ -68,9 +68,10 @@
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
   <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">设备中心</span></span></div>
   <div class="flex items-center gap-8 text-sm">
-    <a class="hover:text-cyan-400" href="object_detection_controlcenter.html">目标检测</a><a class="hover:text-cyan-400" href="visual_dashboard.html">监控中心</a><a class="hover:text-cyan-400" href="history.html">历史溯源</a><a class="hover:text-cyan-400" href="historical_data_analysis.html">数据分析</a><a class="hover:text-cyan-400" href="model_management.html">模型管理</a>
-    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="edge_device_management.html">设备管理</a>
-    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="user_center.html"><span class="iconify" data-icon="solar:user-bold"></span><span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span></a>
+    <a class="nav-link " href="/">导航中心</a>
+    <a class="hover:text-cyan-400" href="/object_detection_controlcenter">目标检测</a><a class="hover:text-cyan-400" href="/visual_dashboard">监控中心</a><a class="hover:text-cyan-400" href="/history">历史溯源</a><a class="hover:text-cyan-400" href="/historical_data_analysis">数据分析</a><a class="hover:text-cyan-400" href="/model_management">模型管理</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="/edge_device_management">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="/user_center"><span class="iconify" data-icon="solar:user-bold"></span><span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span></a>
   </div>
 </nav>
 
@@ -147,6 +148,6 @@
   <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 relative animate-fadeIn"><button id="closePreviewModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"><span class="iconify text-xl" data-icon="solar:close-circle-bold"></span></button><div id="previewCardContent" class="mt-4"></div></div>
 </div>
 
-<script src="/开发目录/static/edge_device_management.js"></script>
+<script src="../static/edge_device_management.js"></script>
 </body>
 </html>

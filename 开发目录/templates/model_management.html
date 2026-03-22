@@ -9,8 +9,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<link rel="stylesheet" href="/开发目录/static/edge_device_management.css">
-<link rel="stylesheet" href="/开发目录/static/model_management.css">
+<link rel="stylesheet" href="../static/edge_device_management.css">
+<link rel="stylesheet" href="../static/model_management.css">
 </head>
 
 <body class="min-h-screen">
@@ -24,13 +24,14 @@
     <span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">模型中心</span></span>
   </div>
   <div class="flex items-center gap-8 text-sm">
-    <a class="hover:text-cyan-400" href="object_detection_controlcenter.html">目标检测</a>
-    <a class="hover:text-cyan-400" href="visual_dashboard.html">监控中心</a>
-    <a class="hover:text-cyan-400" href="history.html">历史溯源</a>
-    <a class="hover:text-cyan-400" href="historical_data_analysis.html">数据分析</a>
-    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1" href="model_management.html">模型管理</a>
-    <a class="hover:text-cyan-400" href="edge_device_management.html">设备管理</a>
-    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="user_center.html">
+    <a class="nav-link " href="/">导航中心</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/object_detection_controlcenter">目标检测</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/visual_dashboard">监控中心</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/history">历史溯源</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/historical_data_analysis">数据分析</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="/model_management">模型管理</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="/edge_device_management">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="/user_center">
       <span class="iconify" data-icon="solar:user-bold"></span>
       <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
     </a>
@@ -527,6 +528,6 @@
   </form>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
-<script src="/开发目录/static/model_management.js"></script>
+<script src="../static/model_management.js"></script>
 </body>
 </html>
