@@ -142,96 +142,120 @@ document.addEventListener('DOMContentLoaded', function() {
         cameraTabBtn.addEventListener('click', () => createAlert('功能开发中', '摄像头实时推理功能正在开发，敬请期待', 'warning'));
     }
 
-    // 5. 开始推理按钮（核心逻辑）
-    if (startInferenceBtn) {
-        startInferenceBtn.addEventListener('click', async () => {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files?.[0];
-            if (!file) {
-                createAlert('推理失败', '请先上传或选择样本图片', 'error');
-                return;
-            }
-            createAlert('推理启动', '正在加载模型并执行推理，请稍候...', 'info');
-            const formData = new FormData();
-            formData.append('image', file);
-            try {
-                const response = await fetch('http://localhost:5000/api/detect', {method: 'POST', body: formData, mode: 'cors' });
-                const data = await response.json();
-                if (data.success) {
-                    // 更新 Result 面板文本
-                    const resultTextPanel = document.getElementById('resultTextPanel');
-                    resultTextPanel.innerHTML = data.result_text.replace(/\n/g, '<br>');
-                    // 更新预览图
-                    const resultPreviewImg = document.getElementById('resultPreviewImg');
-                    resultPreviewImg.src = data.result_image_url;
-                    resultPreviewImg.style.opacity = '1';
-                    // 更新检测框标签
-                    const resultBboxLabel = document.getElementById('resultBboxLabel');
-                    if (data.detect_count > 0) {
-                        const firstCls = data.classes[0];
-                        resultBboxLabel.textContent = `${firstCls.class} ${firstCls.confidence}%`;
-                    }
-                    // 更新延迟和准确率
-                    const resultLatency = document.getElementById('resultLatency');
-                    const resultAcc = document.getElementById('resultAcc');
-                    resultLatency.textContent = `LATENCY: ${data.latency || '8.5'}ms`;
-                    resultAcc.textContent = `ACC: ${(data.avg_conf / 100).toFixed(3)}`;
-                    // 更新状态点
-                    const resultStatusDots = document.getElementById('resultStatusDots');
-                    resultStatusDots.innerHTML = '';
-                    for (let i = 0; i < data.detect_count; i++) {
-                        const dot = document.createElement('div');
-                        dot.className = 'w-2 h-2 rounded-full bg-green-500';
-                        resultStatusDots.appendChild(dot);
-                    }
-                    // 更新统计摘要
-                    document.getElementById('totalDetectCount').textContent = data.detect_count;
-                    document.getElementById('classCount').textContent = new Set(data.classes.map(c => c.class)).size;
-                    document.getElementById('avgConfidence').textContent = data.avg_conf.toFixed(2);
-                    document.getElementById('maxConfidence').textContent = Math.max(...data.classes.map(c => c.confidence)).toFixed(2);
-                    // 更新类别数量表
-                    const classCountTable = document.getElementById('classCountTable');
-                    classCountTable.innerHTML = '';
-                    const classMap = {};
-                    data.classes.forEach(c => classMap[c.class] = (classMap[c.class] || 0) + 1);
-                    Object.entries(classMap).forEach(([cls, cnt]) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${cls}</td><td>${cnt}</td><td>${((cnt / data.detect_count) * 100).toFixed(1)}%</td>`;
-                        classCountTable.appendChild(tr);
-                    });
-                    // 更新详细数据
-                    const detailTable = document.getElementById('detailTable');
-                    detailTable.innerHTML = '';
-                    data.classes.forEach((c, i) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${i+1}</td>
-                            <td>${c.class}</td>
-                            <td>${c.confidence}%</td>
-                            <td>${c.bbox[0].toFixed(0)}</td>
-                            <td>${c.bbox[1].toFixed(0)}</td>
-                            <td>${c.bbox[2].toFixed(0)}</td>
-                            <td>${c.bbox[3].toFixed(0)}</td>
-                            <td>${((c.bbox[2]-c.bbox[0])*(c.bbox[3]-c.bbox[1])).toFixed(0)}</td>
-                        `;
-                        detailTable.appendChild(tr);
-                    });
-                    // 更新控制台日志
-                    const consoleLog = document.getElementById('consoleLog');
-                    consoleLog.innerHTML = `<p>&gt; [AI] 检测完成，共识别到 ${data.detect_count} 个目标</p>` +
-                        data.classes.map((c, i) => `<p>&gt; [AI] 目标 ${i+1}: ${c.class} (置信度 ${c.confidence}%)</p>`).join('') +
-                        `<p class="animate-pulse">&gt; _</p>`;
-                    createAlert('推理完成', `成功检测到 ${data.detect_count} 个目标，平均置信度 ${data.avg_conf}%`, 'success');
-                } else {
-                    createAlert('推理失败', data.msg || '后端处理异常', 'error');
+    // 5. 开始推理按钮（核心逻辑：修复大模型调用+路径问题）
+if (startInferenceBtn) {
+    startInferenceBtn.addEventListener('click', async () => {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files?.[0];
+        if (!file) {
+            createAlert('推理失败', '请先上传或选择样本图片', 'error');
+            return;
+        }
+        createAlert('推理启动', '正在加载模型并执行推理，请稍候...', 'info');
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+            const response = await fetch('http://localhost:5000/api/detect', {method: 'POST', body: formData, mode: 'cors' });
+            const data = await response.json();
+            if (data.success) {
+                // 更新 Result 面板文本
+                const resultTextPanel = document.getElementById('resultTextPanel');
+                resultTextPanel.innerHTML = data.result_text.replace(/\n/g, '<br>');
+                // 更新预览图
+                const resultPreviewImg = document.getElementById('resultPreviewImg');
+                resultPreviewImg.src = data.result_image_url;
+                resultPreviewImg.style.opacity = '1';
+                // 更新检测框标签
+                const resultBboxLabel = document.getElementById('resultBboxLabel');
+                if (data.detect_count > 0) {
+                    const firstCls = data.classes[0];
+                    resultBboxLabel.textContent = `${firstCls.class} ${firstCls.confidence}%`;
                 }
-            } catch (err) {
-                console.error(err);
-                createAlert('网络错误', '无法连接到推理服务，请检查后端', 'error');
+                // 更新延迟和准确率
+                const resultLatency = document.getElementById('resultLatency');
+                const resultAcc = document.getElementById('resultAcc');
+                resultLatency.textContent = `LATENCY: ${data.latency || '8.5'}ms`;
+                resultAcc.textContent = `ACC: ${(data.avg_conf / 100).toFixed(3)}`;
+                // 更新状态点
+                const resultStatusDots = document.getElementById('resultStatusDots');
+                resultStatusDots.innerHTML = '';
+                for (let i = 0; i < data.detect_count; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'w-2 h-2 rounded-full bg-green-500';
+                    resultStatusDots.appendChild(dot);
+                }
+                // 更新统计摘要
+                document.getElementById('totalDetectCount').textContent = data.detect_count;
+                document.getElementById('classCount').textContent = new Set(data.classes.map(c => c.class)).size;
+                document.getElementById('avgConfidence').textContent = data.avg_conf.toFixed(2);
+                document.getElementById('maxConfidence').textContent = Math.max(...data.classes.map(c => c.confidence)).toFixed(2);
+                // 更新类别数量表
+                const classCountTable = document.getElementById('classCountTable');
+                classCountTable.innerHTML = '';
+                const classMap = {};
+                data.classes.forEach(c => classMap[c.class] = (classMap[c.class] || 0) + 1);
+                Object.entries(classMap).forEach(([cls, cnt]) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${cls}</td><td>${cnt}</td><td>${((cnt / data.detect_count) * 100).toFixed(1)}%</td>`;
+                    classCountTable.appendChild(tr);
+                });
+                // 更新详细数据
+                const detailTable = document.getElementById('detailTable');
+                detailTable.innerHTML = '';
+                data.classes.forEach((c, i) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${i+1}</td>
+                        <td>${c.class}</td>
+                        <td>${c.confidence}%</td>
+                        <td>${c.bbox[0].toFixed(0)}</td>
+                        <td>${c.bbox[1].toFixed(0)}</td>
+                        <td>${c.bbox[2].toFixed(0)}</td>
+                        <td>${c.bbox[3].toFixed(0)}</td>
+                        <td>${((c.bbox[2]-c.bbox[0])*(c.bbox[3]-c.bbox[1])).toFixed(0)}</td>
+                    `;
+                    detailTable.appendChild(tr);
+                });
+                // 更新控制台日志（修复大模型调用路径问题）
+                const consoleLog = document.getElementById('consoleLog');
+                let logContent = `<p>&gt; [AI] 检测完成，共识别到 ${data.detect_count} 个目标</p>` +
+                    data.classes.map((c, i) => `<p>&gt; [AI] 目标 ${i+1}: ${c.class} (置信度 ${c.confidence}%)</p>`).join('');
+
+                // 调用大模型分析（传递record_id用于更新记录）
+                try {
+                    const llmResponse = await fetch('/api/analyze_environment', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            image_path: data.saved_filename,
+                            env_desc: data.env_desc,
+                            record_id: data.record_id  // 新增：传递记录ID
+                        })
+                    });
+                    const llmData = await llmResponse.json();
+                    if (llmData.success) {
+                        logContent += `<p>&gt; [LLM] 环境识别：${llmData.data.environment_type}</p>`;
+                        logContent += `<p>&gt; [LLM] 防护建议：${llmData.data.protection_suggestions.join(' | ')}</p>`;
+                    }
+                } catch (e) {
+                    logContent += `<p>&gt; [LLM] 大模型调用失败，使用本地防护建议兜底</p>`;
+                    console.error("LLM调用异常：", e);
+                }
+                logContent += `<p class="animate-pulse">&gt; _</p>`;
+                consoleLog.innerHTML = logContent;
+
+                createAlert('推理完成', `成功检测到 ${data.detect_count} 个目标，平均置信度 ${data.avg_conf}%`, 'success');
+            } else {
+                createAlert('推理失败', data.msg || '后端处理异常', 'error');
             }
-        });
-    }
+        } catch (err) {
+            console.error(err);
+            createAlert('网络错误', '无法连接到推理服务，请检查后端', 'error');
+        }
+    });
+}
 });
+
 // 获取所有检测记录
 async function loadDetectionRecords() {
   try {

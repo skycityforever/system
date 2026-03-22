@@ -12,6 +12,7 @@ LLM 集成模块 - 豆包大模型调用
 import json
 import requests
 import base64
+import os
 from typing import Dict, Optional, Tuple
 
 
@@ -113,7 +114,6 @@ class DoubaoEnvironmentAnalyzer:
         :param image_desc: 图片描述，用于粗略判断环境类型
         :return: 兜底分析结果
         """
-        # 简单的关键词匹配判断环境类型
         env_type = "正常环境"
         if image_desc:
             desc_lower = image_desc.lower()
@@ -133,7 +133,7 @@ class DoubaoEnvironmentAnalyzer:
 
         return {
             "environment_type": env_type,
-            "person_count": 0,  # 本地无法统计人数，默认0
+            "person_count": 0,
             "protection_suggestions": self.LOCAL_PROTECTION_SUGGESTIONS[env_type]
         }
 
@@ -144,17 +144,14 @@ class DoubaoEnvironmentAnalyzer:
             image_desc: Optional[str] = None
     ) -> Dict:
         """
-        调用豆包大模型分析图片（新增兜底逻辑）
-        :param image_base64: 图片Base64编码（二选一传入）
-        :param image_path: 图片本地路径（二选一传入）
-        :param image_desc: 图片文本描述（可选，目标检测模块传入）
-        :return: 分析结果（JSON格式）
+        调用豆包大模型分析图片（新增路径容错+兜底逻辑）
         """
         try:
-            # 构建提示词
-            prompt = self.build_prompt(image_desc)
+            # 路径合法性检查
+            if image_path and not os.path.exists(image_path):
+                raise FileNotFoundError(f"图片文件不存在: {image_path}")
 
-            # 构建请求 payload（根据豆包API格式调整）
+            prompt = self.build_prompt(image_desc)
             payload = {
                 "model": "doubao-pro",
                 "messages": [
@@ -167,14 +164,13 @@ class DoubaoEnvironmentAnalyzer:
                 ]
             }
 
-            # 如果传入图片，添加图片内容
+            # 处理图片
             if image_base64:
                 payload["messages"][0]["content"].append({
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
                 })
             elif image_path:
-                # 读取图片并转Base64
                 with open(image_path, "rb") as f:
                     image_base64 = base64.b64encode(f.read()).decode("utf-8")
                 payload["messages"][0]["content"].append({
@@ -187,13 +183,13 @@ class DoubaoEnvironmentAnalyzer:
             response.raise_for_status()
             result = response.json()
 
-            # 解析返回结果
+            # 解析结果
             llm_output = result["choices"][0]["message"]["content"]
             json_start = llm_output.find("{")
             json_end = llm_output.rfind("}") + 1
             analysis_result = json.loads(llm_output[json_start:json_end])
 
-            # 补充：如果LLM返回的建议为空，使用本地建议兜底
+            # 兜底空建议
             if not analysis_result.get("protection_suggestions"):
                 env_type = analysis_result.get("environment_type", "正常环境")
                 analysis_result["protection_suggestions"] = self.LOCAL_PROTECTION_SUGGESTIONS.get(env_type,
@@ -204,13 +200,11 @@ class DoubaoEnvironmentAnalyzer:
 
         except Exception as e:
             print(f"大模型调用失败：{str(e)}，使用本地兜底结果")
-            # 调用失败时返回本地兜底结果
             return self.get_local_fallback_result(image_desc)
 
     def get_prompt_list(self) -> Dict[str, str]:
         """
-        提供提示词列表，供目标检测模块直接调用（新增雾天相关提示词）
-        :return: 不同场景的提示词模板
+        提供提示词列表
         """
         return {
             "environment_analysis": self.build_prompt(),
@@ -219,18 +213,12 @@ class DoubaoEnvironmentAnalyzer:
             "fog_detection": """判断图片是否为雾天环境，仅返回“是”或“否”"""
         }
 
-
-# --------------------------
-# 示例：模块调用方式
-# --------------------------
+# 测试代码
 if __name__ == "__main__":
-    # 初始化（实际使用时从配置文件读取）
     analyzer = DoubaoEnvironmentAnalyzer(
         api_url="https://metaso.cn/api/v1/chat/completions",
         api_key="mk-7925AE7CBDE52565CD3535FECAAC9172"
     )
-
-    # 调用示例（传入图片路径+描述）
     try:
         result = analyzer.analyze_image(
             image_path="8.png",

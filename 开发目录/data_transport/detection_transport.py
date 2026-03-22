@@ -1,4 +1,3 @@
-# data_transport/detection_transport.py
 import json
 import os
 import uuid
@@ -45,6 +44,34 @@ def save_detection_record(detect_type, detect_results, llm_suggestion=""):
         json.dump(records, f, ensure_ascii=False, indent=2)
 
     return record["id"]
+
+def update_detection_record_llm(record_id, new_llm_suggestion):
+    """
+    根据记录ID更新大模型建议
+    :param record_id: 要更新的记录ID
+    :param new_llm_suggestion: 新的大模型建议文本
+    :return: 是否更新成功
+    """
+    if not os.path.exists(RECORD_FILE):
+        return False
+
+    with open(RECORD_FILE, 'r', encoding='utf-8') as f:
+        try:
+            records = json.load(f)
+        except json.JSONDecodeError:
+            records = []
+
+    updated = False
+    for record in records:
+        if record["id"] == record_id:
+            record["llm_suggestion"] = new_llm_suggestion
+            updated = True
+            break
+
+    if updated:
+        with open(RECORD_FILE, 'w', encoding='utf-8') as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
+    return updated
 
 def get_all_detection_records():
     """获取所有检测记录"""
