@@ -9,20 +9,77 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- 引入外部CSS -->
 <link rel="stylesheet" href="../static/object_detection_controlcenter.css">
+<style>
+/* 告警提示样式 - 导航栏下方 */
+.alert-item {
+  position: fixed;
+  top: 72px; /* 导航栏下方8px */
+  right: 32px;
+  background: #1e293b;
+  border-left: 4px solid #06b6d4;
+  color: #f1f5f9;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 9999;
+  width: 320px;
+  transition: all 0.3s ease;
+}
+.alert-item.success { border-left-color: #22c55e; }
+.alert-item.warning { border-left-color: #eab308; }
+.alert-item.error { border-left-color: #ef4444; }
+
+/* 导航栏防重叠样式 */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.whitespace-nowrap {
+    white-space: nowrap;
+}
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* 拖拽上传区域样式 */
+#sampleDropArea.dragover {
+  border-color: #22d3ee;
+  background-color: rgba(34, 211, 238, 0.05);
+}
+#previewContainer {
+  transition: all 0.3s ease;
+}
+</style>
 </head>
 <body class="min-h-screen">
 
+<!-- 告警容器 -->
+<div class="alert-container" id="alertContainer"></div>
+
 <!-- 导航栏 -->
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
-  <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">目标检测中心</span></span></div>
-  <div class="flex items-center gap-8 text-sm">
-    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400" href="object_detection_controlcenter.html">目标检测</a>
-    <a class="hover:text-cyan-400" href="visual_dashboard.html">监控中心</a>
-    <a class="hover:text-cyan-400" href="history.html">历史溯源</a>
-    <a class="hover:text-cyan-400" href="historical_data_analysis.html">数据分析</a>
-    <a class="hover:text-cyan-400" href="model_management.html">模型管理</a>
-    <a class="hover:text-cyan-400" href="edge_device_management.html">设备管理</a>
-    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative" href="user_center.html"><span class="iconify" data-icon="solar:user-bold"></span><span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span></a>
+  <!-- 左侧 Logo + 标题（固定不换行） -->
+  <div class="flex items-center gap-3 flex-shrink-0">
+    <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
+    <span class="text-xl font-bold tracking-wider text-white whitespace-nowrap">
+      POLAR GUARD <span class="text-cyan-400 text-sm">目标检测中心</span>
+    </span>
+  </div>
+  <!-- 右侧导航链接（允许自动换行/溢出隐藏） -->
+  <div class="flex items-center gap-6 text-sm overflow-x-auto no-scrollbar">
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="object_detection_controlcenter.html">目标检测</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="visual_dashboard.html">监控中心</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="history.html">历史溯源</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="historical_data_analysis.html">数据分析</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="model_management.html">模型管理</a>
+    <a class="hover:text-cyan-400 whitespace-nowrap" href="edge_device_management.html">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="user_center.html">
+      <span class="iconify" data-icon="solar:user-bold"></span>
+      <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+    </a>
   </div>
 </nav>
 
@@ -241,23 +298,28 @@
                 </h3>
                 <div class="flex gap-4">
                     <button class="tab-btn active px-4 py-1 text-sm border-t-2">图片分析</button>
-                    <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" onclick="alert('视频识别功能开发中')">视频流推理</button>
-                    <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" onclick="alert('摄像头识别功能开发中')">摄像头实时</button>
+                    <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" id="videoTabBtn">视频流推理</button>
+                    <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" id="cameraTabBtn">摄像头实时</button>
                 </div>
             </div>
             <div class="flex-1 grid grid-cols-2 gap-6 pb-6">
                 <div class="flex flex-col gap-3">
-                    <div class="flex-1 border-2 border-dashed border-cyan-500/50 rounded-xl relative group overflow-hidden bg-slate-900 flex items-center justify-center cursor-pointer hover:border-cyan-500 transition-colors">
+                    <div id="sampleDropArea" class="flex-1 border-2 border-dashed border-cyan-500/50 rounded-xl relative group overflow-hidden bg-slate-900 flex items-center justify-center cursor-pointer hover:border-cyan-500 transition-colors">
+                        <input type="file" id="fileInput" accept="image/*,video/mp4,.bin" class="hidden" />
                         <div class="text-center group-hover:scale-110 transition-transform">
                             <span class="iconify text-5xl text-slate-600 mb-2 mx-auto" data-icon="solar:camera-add-bold"></span>
                             <p class="text-sm text-slate-500">点击或拖拽样本至此处</p>
                             <p class="text-[10px] text-slate-600 mt-1 uppercase">Supports JPG, MP4, BIN(RADAR)</p>
+                            <div id="previewContainer" class="mt-2 hidden">
+                                <img id="previewImg" class="max-h-32 max-w-full rounded opacity-70" alt="预览图" />
+                                <p id="fileName" class="text-xs text-cyan-400 mt-1"></p>
+                            </div>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button class="flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700">加载样本A: 暴雨</button>
-                        <button class="flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700">加载样本B: 浓雾</button>
-                        <button class="flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700">加载样本C: 大雪</button>
+                        <button class="loadSampleBtn flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700" data-sample="暴雨">加载样本A: 暴雨</button>
+                        <button class="loadSampleBtn flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700" data-sample="浓雾">加载样本B: 浓雾</button>
+                        <button class="loadSampleBtn flex-1 py-1.5 bg-slate-800 rounded text-[10px] hover:bg-slate-700" data-sample="大雪">加载样本C: 大雪</button>
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
@@ -307,7 +369,7 @@
                             </div>
                         </div>
                     </div>
-                    <button class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-900/20">开始模拟推理</button>
+                    <button id="startInferenceBtn" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-900/20">开始模拟推理</button>
                 </div>
             </div>
             <div class="glass-panel rounded-xl p-4 bg-black/40 border-slate-700">
@@ -415,7 +477,8 @@
     </div>
 </main>
 
-<!-- 引入外部JS -->
+<!-- 核心功能JS -->
 <script src="../static/object_detection_controlcenter.js"></script>
+
 </body>
 </html>
