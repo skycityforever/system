@@ -120,3 +120,49 @@ body {
 .overlay.show {
   display: block;
 }
+/* 加载动画样式 - 复制到<style>标签 */
+.loader-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #020617; /* 适配极境守护的背景色，可根据页面调整 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* 确保在最顶层 */
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+.loader {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(34, 211, 238, 0.2); /* 淡青色边框 */
+    border-top: 4px solid #22d3ee; /* 主色边框 */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+.loader-text {
+    color: #22d3ee; /* 文字颜色适配系统风格 */
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+/* 动画关键帧 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+/* 隐藏加载动画的类 */
+.loader-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* 隐藏后不遮挡点击 */
+}

@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
+<link rel="stylesheet" href="../static/visual_dashboard.css">
 <style>
         .glass-panel { background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(12px); border: 1px solid rgba(56, 189, 248, 0.2); }
         body { background-color: #020617; color: #e2e8f0; }
@@ -18,7 +18,11 @@
 </head>
 
 <body class="min-h-screen">
-
+<!-- 加载动画容器 - 复制到<body>开头 -->
+<div class="loader-container" id="loaderContainer">
+    <div class="loader"></div>
+    <div class="loader-text">系统加载中...</div>
+</div>
 
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
   <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">监控中心</span></span></div>
@@ -38,6 +42,6 @@
 </nav>
 
 
-
+<script src="../static/visual_dashboard.js"></script>
 </body>
 </html>

@@ -2,19 +2,27 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>极境守护 - 导航中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <link rel="stylesheet" href="../static/navigation.css">
 </head>
 <body>
+
+<!-- 加载动画 -->
+<div class="loader-container" id="loaderContainer">
+    <div class="loader"></div>
+    <div class="loader-text">极境守护系统加载中...</div>
+</div>
+
 <!-- 导航栏 -->
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
   <div class="flex items-center gap-3">
     <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
     <span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">导航中心</span></span>
   </div>
-  <div class="flex items-center gap-8 text-sm">
+  <div class="flex items-center gap-8 text-sm overflow-x-auto no-scrollbar">
     <a class="nav-link active" href="/">导航中心</a>
     <a class="nav-link" href="/object_detection_controlcenter">目标检测</a>
     <a class="nav-link" href="/visual_dashboard">监控中心</a>
@@ -31,19 +39,26 @@
 
 <!-- 主内容区 -->
 <main class="pt-24 px-6 min-h-screen relative overflow-hidden">
-  <!-- 动态背景网格 -->
   <div class="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none"></div>
-
   <div class="max-w-7xl mx-auto relative z-10">
-    <!-- 欢迎标题 -->
-    <div class="text-center mb-16">
+
+    <div class="text-center mb-8">
       <h1 class="text-5xl font-bold text-cyan-400 mb-4 glow-text">欢迎来到极境守护</h1>
-      <p class="text-slate-300 text-lg max-w-2xl mx-auto">极端环境下人体目标检测可视化系统，为您提供全流程智能监控与分析能力</p>
+      <p class="text-slate-300 text-lg max-w-2xl mx-auto mb-6">极端环境下人体目标检测可视化系统，为您提供全流程智能监控与分析能力</p>
+      <div class="flex justify-center gap-4 mt-8">
+        <button class="quick-action-btn" id="quickUploadBtn">
+          <span class="iconify" data-icon="solar:upload-bold"></span>快速上传检测样本
+        </button>
+        <button class="quick-action-btn" id="quickAlertBtn">
+          <span class="iconify" data-icon="solar:bell-bold"></span>查看最新告警 (3)
+        </button>
+        <button class="quick-action-btn" id="quickRefreshBtn">
+          <span class="iconify" data-icon="solar:refresh-bold"></span>刷新系统状态
+        </button>
+      </div>
     </div>
 
-    <!-- 功能卡片网格 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- 目标检测 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
       <a href="/object_detection_controlcenter" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:object-scan-bold"></span>
@@ -54,8 +69,6 @@
           <span class="iconify text-xl text-cyan-400" data-icon="solar:arrow-right-bold"></span>
         </div>
       </a>
-
-      <!-- 监控中心 -->
       <a href="/visual_dashboard" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:chart-bold"></span>
@@ -66,8 +79,6 @@
           <span class="iconify text-xl text-cyan-400" data-icon="solar:arrow-right-bold"></span>
         </div>
       </a>
-
-      <!-- 历史溯源 -->
       <a href="/history" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:history-bold"></span>
@@ -78,8 +89,6 @@
           <span class="iconify text-xl text-cyan-400" data-icon="solar:arrow-right-bold"></span>
         </div>
       </a>
-
-      <!-- 数据分析 -->
       <a href="/historical_data_analysis" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:pie-chart-bold"></span>
@@ -90,8 +99,6 @@
           <span class="iconify text-xl text-cyan-400" data-icon="solar:arrow-right-bold"></span>
         </div>
       </a>
-
-      <!-- 模型管理 -->
       <a href="/model_management" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:cpu-bold"></span>
@@ -102,8 +109,6 @@
           <span class="iconify text-xl text-cyan-400" data-icon="solar:arrow-right-bold"></span>
         </div>
       </a>
-
-      <!-- 设备管理 -->
       <a href="/edge_device_management" class="card">
         <div class="card-icon">
           <span class="iconify text-4xl text-cyan-400" data-icon="solar:server-bold"></span>
@@ -116,28 +121,27 @@
       </a>
     </div>
 
-    <!-- 系统状态概览 -->
-    <div class="mt-16 glass-panel p-6 rounded-xl">
+    <div class="mt-8 glass-panel p-6 rounded-xl">
       <h2 class="text-2xl font-bold text-cyan-400 mb-6">系统状态概览</h2>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="stat-item">
           <span class="text-slate-400 text-sm">在线设备</span>
-          <div class="text-3xl font-bold text-white">42</div>
+          <div class="text-3xl font-bold text-white" id="onlineDevices">42</div>
           <span class="text-green-400 text-xs">↑ 2 台 (24h)</span>
         </div>
         <div class="stat-item">
           <span class="text-slate-400 text-sm">今日检测</span>
-          <div class="text-3xl font-bold text-white">1,284</div>
+          <div class="text-3xl font-bold text-white" id="todayDetect">1,284</div>
           <span class="text-green-400 text-xs">↑ 12% (24h)</span>
         </div>
         <div class="stat-item">
           <span class="text-slate-400 text-sm">模型精度</span>
-          <div class="text-3xl font-bold text-white">98.2%</div>
+          <div class="text-3xl font-bold text-white" id="modelAccuracy">98.2%</div>
           <span class="text-cyan-400 text-xs">稳定</span>
         </div>
         <div class="stat-item">
           <span class="text-slate-400 text-sm">平均延迟</span>
-          <div class="text-3xl font-bold text-white">8.5ms</div>
+          <div class="text-3xl font-bold text-white" id="avgLatency">8.5ms</div>
           <span class="text-green-400 text-xs">↓ 0.3ms (24h)</span>
         </div>
       </div>
