@@ -9,12 +9,12 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
 from data_transport.device_transport import device_transport_bp
 from data_transport.model_transport import model_transport_bp
-# 注意：这里新增导入 update_detection_record_llm
 from data_transport.detection_transport import (
     save_detection_record,
     get_all_detection_records,
     update_detection_record_llm
 )
+from data_transport.visual_dashboard_api import dashboard_bp
 from flask_cors import CORS
 from llm_integration.llm_client import DoubaoEnvironmentAnalyzer
 
@@ -27,7 +27,7 @@ CORS(app)
 # 注册蓝图
 app.register_blueprint(device_transport_bp)
 app.register_blueprint(model_transport_bp)
-
+app.register_blueprint(dashboard_bp)
 # 配置路径
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 RESULT_FOLDER = os.path.join(os.path.dirname(__file__), './detection/runs/detect')

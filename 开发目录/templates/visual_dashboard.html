@@ -3,45 +3,162 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>极境守护 - 监控中心</title>
+<title>极境守护 - 全域监控中心</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <link rel="stylesheet" href="../static/visual_dashboard.css">
-<style>
-        .glass-panel { background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(12px); border: 1px solid rgba(56, 189, 248, 0.2); }
-        body { background-color: #020617; color: #e2e8f0; }
-        .tab-btn.active { border-color: #22d3ee; color: #22d3ee; background: rgba(34, 211, 238, 0.1); }
-    </style>
 </head>
 
-<body class="min-h-screen">
-<!-- 加载动画容器 - 复制到<body>开头 -->
+<body class="min-h-screen bg-[#020617] text-white">
 <div class="loader-container" id="loaderContainer">
     <div class="loader"></div>
-    <div class="loader-text">系统加载中...</div>
+    <div class="loader-text">全域监控系统启动中...</div>
 </div>
 
 <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
-  <div class="flex items-center gap-3"><span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span><span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">监控中心</span></span></div>
-  <div class="flex items-center gap-8 text-sm">
-    <a class="nav-link " href="/">导航中心</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="/object_detection_controlcenter">目标检测</a>
-    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="/visual_dashboard">监控中心</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="/history">历史溯源</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="/historical_data_analysis">数据分析</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="/model_management">模型管理</a>
-    <a class="hover:text-cyan-400 whitespace-nowrap" href="/edge_device_management">设备管理</a>
-    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="/user_center">
+  <div class="flex items-center gap-3">
+    <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
+    <span class="text-xl font-bold text-white">POLAR GUARD <span class="text-cyan-400 text-sm">全域监控中心</span></span>
+  </div>
+  <div class="flex items-center gap-6 text-sm overflow-x-auto no-scrollbar">
+    <a class="nav-link" href="/">导航中心</a>
+    <a class="nav-link" href="/object_detection_controlcenter">目标检测</a>
+    <a class="nav-link active" href="/visual_dashboard">监控中心</a>
+    <a class="nav-link" href="/history">历史溯源</a>
+    <a class="nav-link" href="/historical_data_analysis">数据分析</a>
+    <a class="nav-link" href="/model_management">模型管理</a>
+    <a class="nav-link" href="/edge_device_management">设备管理</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center relative profile-ring">
       <span class="iconify" data-icon="solar:user-bold"></span>
       <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
     </a>
   </div>
 </nav>
 
+<main class="pt-24 px-6 relative">
+  <div class="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none"></div>
+  <div class="max-w-[1920px] mx-auto relative z-10">
 
+    <!-- 顶部控制栏（可交互） -->
+    <div class="glass-panel p-4 mb-6 flex flex-wrap gap-3 items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button id="btnRefresh" class="px-3 py-1 bg-cyan-500/20 border border-cyan-400 rounded text-xs hover:bg-cyan-500/30">
+          🔄 刷新数据
+        </button>
+        <button id="btnTestAlert" class="px-3 py-1 bg-red-500/20 border border-red-400 rounded text-xs hover:bg-red-500/30">
+          🚨 测试预警
+        </button>
+        <button id="btnFullscreen" class="px-3 py-1 bg-white/10 border border-white/30 rounded text-xs hover:bg-white/20">
+          🖥️ 全屏显示
+        </button>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="weatherMode" class="px-2 py-1 bg-black/50 border border-cyan-500/50 rounded text-xs text-white">
+          <option value="auto">自动气象模式</option>
+          <option value="sunny">晴天</option>
+          <option value="rain">降雨</option>
+          <option value="snow">降雪</option>
+          <option value="fog">大雾</option>
+        </select>
+        <select id="earthView" class="px-2 py-1 bg-black/50 border border-cyan-500/50 rounded text-xs text-white">
+          <option value="china">中国视角</option>
+          <option value="global">全球视角</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+      <!-- 3D GIS -->
+      <div class="col-span-8 glass-panel rounded-xl overflow-hidden relative h-[520px]">
+        <div id="scene-container" class="w-full h-full"></div>
+        <div class="absolute top-4 left-4 bg-black/50 p-3 rounded border border-cyan-400/40">
+          <p class="text-xs text-cyan-400">3D GIS 态势感知</p>
+          <p class="text-sm">气象层：<span id="weather-layer-text" class="text-cyan-300">气象卫星云图</span></p>
+        </div>
+      </div>
+
+      <!-- 右侧 -->
+      <div class="col-span-4 flex flex-col gap-5">
+        <div class="glass-panel p-5 rounded-xl">
+          <div class="text-cyan-400 text-sm mb-2">环境总览</div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="p-2 bg-white/5 rounded">温度 <br><span class="text-xl text-white" id="temp">--</span>℃</div>
+            <div class="p-2 bg-white/5 rounded">湿度 <br><span class="text-xl text-white" id="humi">--</span>%</div>
+            <div class="p-2 bg-white/5 rounded">气压 <br><span class="text-xl text-white" id="press">--</span>hPa</div>
+            <div class="p-2 bg-white/5 rounded">AQI <br><span class="text-xl text-white" id="aqi">--</span></div>
+            <div class="p-2 bg-white/5 rounded">风向 <br><span class="text-xl text-white" id="wind_dir">--</span>°</div>
+            <div class="p-2 bg-white/5 rounded">能见度 <br><span class="text-xl text-white" id="visibility">--</span>m</div>
+          </div>
+        </div>
+
+        <!-- 风速仪表盘 -->
+        <div class="glass-panel p-5 rounded-xl h-[190px]">
+          <div class="text-cyan-400 text-sm mb-2">实时风速</div>
+          <div id="windGauge" class="w-full h-[140px]"></div>
+        </div>
+      </div>
+
+      <!-- 下侧 -->
+      <div class="col-span-8 glass-panel p-5 rounded-xl h-[220px]">
+        <div class="text-cyan-400 text-sm mb-3">实时气象趋势</div>
+        <div id="weather-chart" class="w-full h-[160px]"></div>
+      </div>
+
+      <div class="col-span-4 glass-panel p-5 rounded-xl h-[220px]">
+        <div class="flex justify-between items-center mb-2">
+          <div class="text-cyan-400 text-sm">实时告警</div>
+          <button id="exportAlert" class="text-xs text-white/60 hover:text-white">导出</button>
+        </div>
+        <div class="text-xs space-y-2 max-h-[160px] overflow-y-auto" id="alert-list">
+          <div class="p-2 bg-green-500/10 border border-green-500/30 rounded">系统正常，无告警</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 弹窗 -->
+<div id="alert-modal" class="fixed inset-0 bg-black/80 z-50 items-center justify-center hidden">
+  <div class="glass-panel p-8 rounded-xl border-2 border-red-500 min-w-[450px] text-center">
+    <h3 class="text-2xl font-bold text-red-500 mb-4">⚠️ 极端天气 + 人体异常预警</h3>
+    <p class="mb-1">类型：<span id="amt" class="text-white">--</span></p>
+    <p class="mb-1">位置：<span id="aml" class="text-white">--</span></p>
+    <p class="mb-4">时间：<span id="amtm" class="text-white">--</span></p>
+    <div class="p-3 bg-black/50 rounded text-green-400 text-xs mb-6">已同步至边缘设备与指挥中心</div>
+    <button id="close-alert" class="px-6 py-2 bg-red-600 hover:bg-red-500 rounded">关闭</button>
+  </div>
+</div>
+<!-- 底部扩展模块 -->
+<div class="max-w-[1920px] mx-auto mt-6 px-6 grid grid-cols-12 gap-6 relative z-10">
+  <!-- 设备热力图 -->
+  <div class="col-span-4 glass-panel p-5 rounded-xl h-[180px]">
+    <div class="text-cyan-400 text-sm mb-3">设备热力分布</div>
+    <div id="device-heatmap" class="w-full h-[120px]"></div>
+  </div>
+
+  <!-- 实时日志流 -->
+  <div class="col-span-5 glass-panel p-5 rounded-xl h-[180px]">
+    <div class="flex justify-between items-center mb-2">
+      <div class="text-cyan-400 text-sm">系统实时日志</div>
+      <span class="text-xs text-green-400">● 实时更新中</span>
+    </div>
+    <div class="text-xs text-slate-300 font-mono h-[120px] overflow-y-auto" id="log-stream">
+      <div class="mb-1">[09:08:22] 气象传感器 #1 数据同步成功</div>
+      <div class="mb-1">[09:08:25] 边缘设备 #2 在线状态维持</div>
+      <div class="mb-1">[09:08:28] 风速趋势图表更新完成</div>
+      <div class="mb-1">[09:08:31] 环境风险指数：低</div>
+    </div>
+  </div>
+
+  <!-- 环境风险指数 -->
+  <div class="col-span-3 glass-panel p-5 rounded-xl h-[180px]">
+    <div class="text-cyan-400 text-sm mb-3">环境风险指数</div>
+    <div id="risk-gauge" class="w-full h-[120px]"></div>
+  </div>
+</div>
 <script src="../static/visual_dashboard.js"></script>
 </body>
 </html>
