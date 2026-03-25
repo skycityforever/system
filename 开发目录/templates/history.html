@@ -41,9 +41,7 @@
 </nav>
 
 <main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto">
-<!-- 侧边过滤器与主列表布局 -->
 <div class="grid grid-cols-4 gap-8">
-  <!-- 左侧筛选栏 -->
   <div class="col-span-1 space-y-6">
     <div class="glass-panel rounded-xl p-5">
       <h3 class="text-cyan-400 font-bold mb-4 flex items-center gap-2 text-lg">
@@ -52,7 +50,7 @@
       <div class="space-y-4">
         <div>
           <label class="text-xs text-slate-400 block mb-2 uppercase tracking-widest">时间范围</label>
-          <input id="filterDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm focus:border-cyan-500 outline-none" type="date" value="2026-03-18"/>
+          <input id="filterDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm focus:border-cyan-500 outline-none" type="date" value="2026-03-22"/>
         </div>
         <div>
           <label class="text-xs text-slate-400 block mb-2 uppercase tracking-widest">天气条件</label>
@@ -101,12 +99,11 @@
     </div>
   </div>
 
-  <!-- 右侧结果集 -->
   <div class="col-span-3">
     <div class="glass-panel rounded-xl p-6">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold flex items-center gap-3 underline decoration-cyan-500 decoration-4 underline-offset-8">
-          检索结果集 <span id="resultCount" class="text-xs font-normal text-slate-400 bg-slate-800 px-2 py-1 rounded">共 128 条记录</span>
+          检索结果集 <span id="resultCount" class="text-xs font-normal text-slate-400 bg-slate-800 px-2 py-1 rounded">共 0 条记录</span>
         </h2>
         <div class="flex gap-2">
           <button id="viewList" class="p-2 border border-slate-700 rounded hover:bg-slate-800 active:bg-cyan-600 active:border-cyan-500">
@@ -118,7 +115,6 @@
         </div>
       </div>
 
-      <!-- 列表视图 -->
       <div id="listView" class="overflow-x-auto">
         <table class="w-full text-left border-separate border-spacing-y-4">
           <thead>
@@ -131,29 +127,34 @@
               <th class="p-4 rounded-r-lg text-center">操作</th>
             </tr>
           </thead>
-          <tbody id="resultTableBody" class="text-sm">
-            <!-- 数据由 JS 动态渲染 -->
-          </tbody>
+          <tbody id="resultTableBody" class="text-sm"></tbody>
         </table>
       </div>
 
-      <!-- 卡片视图（默认隐藏） -->
-      <div id="gridView" class="hidden grid grid-cols-2 gap-4">
-        <!-- 卡片数据由 JS 动态渲染 -->
-      </div>
+      <div id="gridView" class="hidden grid grid-cols-2 gap-4"></div>
 
-      <!-- 分页 -->
       <div class="mt-8 flex justify-center gap-2">
         <button id="prevPage" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 transition-colors">上一页</button>
-        <div id="paginationNumbers" class="flex gap-2">
-          <!-- 页码由 JS 动态渲染 -->
-        </div>
+        <div id="paginationNumbers" class="flex gap-2"></div>
         <button id="nextPage" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 transition-colors">下一页</button>
       </div>
     </div>
   </div>
 </div>
 </main>
+
+<!-- 详情取证弹窗 -->
+<div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+  <div class="glass-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-6 relative">
+    <button id="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <span class="iconify text-2xl" data-icon="solar:close-bold"></span>
+    </button>
+    <div class="mb-4 border-b border-slate-700 pb-4">
+      <h3 class="text-xl font-bold text-cyan-400">检测记录详情</h3>
+    </div>
+    <div id="detailContent" class="space-y-6 text-sm"></div>
+  </div>
+</div>
 
 <script src="../static/history.js"></script>
 </body>

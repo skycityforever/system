@@ -5,9 +5,16 @@ from ultralytics import RTDETR
 
 def rtdetr_detect(image_path, model_path, save_dir='runs/detect', show=False):
     try:
+        # ==============================================
+        # 🔥 唯一干净、离线、兼容所有版本的加载方式
+        # ==============================================
+        # 直接加载本地模型，不设置任何会报错的参数
         model = RTDETR(model_path)
+
+        # 直接推理，极简写法，不联网
         results = model(image_path)
 
+        # 保存输出图片
         output_img_path = os.path.join(save_dir, os.path.basename(image_path))
         os.makedirs(save_dir, exist_ok=True)
 
@@ -40,6 +47,7 @@ def rtdetr_detect(image_path, model_path, save_dir='runs/detect', show=False):
         }
 
     except Exception as e:
+        print(f"❌ RT-DETR 推理出错: {str(e)}")
         return None, "", {
             "status": "error",
             "msg": str(e)

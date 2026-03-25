@@ -48,7 +48,7 @@ C2PNET_ONNX_PATH = os.path.join(
     os.path.dirname(__file__),
     "./detection/C2PNet-onnxrun-main/C2PNet-onnxrun-main/weights/c2pnet_outdoor_640x640.onnx"
 )
-RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/rtdetr_resnet50.pt')
+RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/rt_detr/rtdetr-l.pt')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
@@ -244,6 +244,11 @@ def detect_image_api():
             else:
                 result_image_url = f"/results/{result_img_filename}"
 
+            record_id = save_detection_record(
+                detect_type="图片检测",
+                detect_results=info['classes']
+            )
+
             return jsonify({
                 "success": True,
                 "detect_count": info['detect_count'],
@@ -252,7 +257,8 @@ def detect_image_api():
                 "result_text": result_text,
                 "classes": info['classes'],
                 "latency": 12,
-                "saved_filename": unique_filename
+                "saved_filename": unique_filename,
+                "record_id": record_id
             })
 
         # C2PNet 去雾
@@ -268,6 +274,11 @@ def detect_image_api():
 
             result_image_url = f"/dehaze_results/{result_filename}"
 
+            record_id = save_detection_record(
+                detect_type="图像去雾",
+                detect_results=[]
+            )
+
             return jsonify({
                 "success": True,
                 "detect_count": 0,
@@ -276,10 +287,13 @@ def detect_image_api():
                 "result_text": "C2PNet 去雾完成\n图像清晰度已提升",
                 "classes": [],
                 "latency": 18,
-                "saved_filename": unique_filename
+                "saved_filename": unique_filename,
+                "record_id": record_id
             })
 
-        # RT-DETR 检测
+        # ====================
+        # ✅ 修复 RT-DETR 404
+        # ====================
         elif model == "rt_detr":
             results, output_img_path, info = rtdetr_detect(
                 image_path=upload_path,
@@ -294,13 +308,13 @@ def detect_image_api():
             for cls in info['classes']:
                 result_text += f"{cls['class']} {cls['confidence']}%\n"
 
-            result_img_filename = os.path.basename(output_img_path)
-            dirs = glob.glob(os.path.join(RESULT_FOLDER, 'predict*'))
-            if dirs:
-                latest_dir = os.path.basename(max(dirs, key=os.path.getctime))
-                result_image_url = f"/results/{latest_dir}/{result_img_filename}"
-            else:
-                result_image_url = f"/results/{result_img_filename}"
+            # ✅ 强制直接访问根目录，修复 404
+            result_image_url = f"/results/{os.path.basename(output_img_path)}"
+
+            record_id = save_detection_record(
+                detect_type="RT-DETR检测",
+                detect_results=info['classes']
+            )
 
             return jsonify({
                 "success": True,
@@ -310,7 +324,8 @@ def detect_image_api():
                 "result_text": result_text,
                 "classes": info['classes'],
                 "latency": 15,
-                "saved_filename": unique_filename
+                "saved_filename": unique_filename,
+                "record_id": record_id
             })
 
         else:
