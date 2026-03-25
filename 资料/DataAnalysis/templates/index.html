@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>极境守护 - 数据分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        /* 核心风格变量 */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            padding-top: 4rem; /* 适配固定导航栏 */
+        }
+        .tab-btn.active {
+            border-color: #22d3ee;
+            color: #22d3ee;
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        /* 加载动画样式 */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(34, 211, 238, 0.2);
+            border-top: 4px solid #22d3ee;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        .loader-text {
+            color: #22d3ee;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* 数据分析模块样式 */
+        .analysis-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .analysis-card {
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-control {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #22d3ee;
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+            color: #020617;
+            font-weight: 600;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            transform: translateY(-2px);
+        }
+        .btn-primary:disabled {
+            background: rgba(34, 211, 238, 0.3);
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .result-card pre {
+            color: #a5f3fc;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22d3ee;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <!-- 加载动画容器 -->
+    <div class="loader-container" id="loaderContainer">
+        <div class="loader"></div>
+        <div class="loader-text">系统加载中...</div>
+    </div>
+
+    <!-- 导航栏（与极境守护风格完全一致） -->
+    <nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
+        <div class="flex items-center gap-3">
+            <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
+            <span class="text-xl font-bold tracking-wider text-white">POLAR GUARD
+                <span class="text-cyan-400 text-sm">数据分析</span>
+            </span>
+        </div>
+        <div class="flex items-center gap-8 text-sm">
+            <a class="nav-link hover:text-cyan-400 whitespace-nowrap" href=" ">导航中心</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/object_detection_controlcenter">目标检测</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/visual_dashboard">监控中心</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/history">历史溯源</a>
+            <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="/historical_data_analysis">数据分析</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/model_management">模型管理</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/edge_device_management">设备管理</a>
+            <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-2 relative flex-shrink-0" href="/user_center">
+                <span class="iconify" data-icon="solar:user-bold"></span>
+                <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 数据分析核心模块 -->
+    <section class="analysis-container">
+        <div class="analysis-card glass-panel">
+            <h2 class="text-2xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">数据接收与智能分析</h2>
+
+            <!-- 场景选择与自定义 -->
+            <div class="scene-section mb-6">
+                <label for="scene-select" class="block text-cyan-300 font-medium mb-2">选择分析场景：</label>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <select id="scene-select" class="form-control w-64"></select>
+                    <div class="custom-scene flex items-center gap-2">
+                        <input type="text" id="new-scene" placeholder="输入自定义场景名称" class="form-control w-64">
+                        <button id="add-scene-btn" class="btn-primary">添加场景</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文件上传 -->
+            <div class="upload-section mb-6">
+                <label for="file-upload" class="block text-cyan-300 font-medium mb-2">上传分析文件：</label>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <input type="file" id="file-upload" class="form-control" accept="image/jpeg,image/png,video/mp4,video/avi">
+                    <button id="analyze-btn" class="btn-primary">开始智能分析</button>
+                </div>
+                <p class="text-slate-400 text-sm mt-2">支持格式：JPG/PNG（图片）、MP4/AVI（视频）</p>
+            </div>
+
+            <!-- 分析结果展示 -->
+            <div class="result-section hidden" id="result-section">
+                <h3 class="text-xl font-bold text-cyan-400 mb-3">分析结果</h3>
+                <div class="result-card">
+                    <pre id="result-content"></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // 加载动画控制逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1.5秒后隐藏加载动画
+            setTimeout(() => {
+                hideLoader();
+            }, 1500);
+
+            // 初始化数据分析功能
+            initAnalysis();
+        });
+
+        // 通用隐藏加载动画的函数
+        function hideLoader() {
+            const loaderContainer = document.getElementById('loaderContainer');
+            if (loaderContainer) {
+                loaderContainer.classList.add('loader-hidden');
+                setTimeout(() => {
+                    loaderContainer.remove();
+                }, 500);
+            }
+        }
+
+        // 数据分析核心逻辑
+        function initAnalysis() {
+            // 后端接口基础地址
+            const BASE_URL = "http://127.0.0.1:8000/api";
+
+            // 元素获取
+            const sceneSelect = document.getElementById("scene-select");
+            const newSceneInput = document.getElementById("new-scene");
+            const addSceneBtn = document.getElementById("add-scene-btn");
+            const fileUpload = document.getElementById("file-upload");
+            const analyzeBtn = document.getElementById("analyze-btn");
+            const resultSection = document.getElementById("result-section");
+            const resultContent = document.getElementById("result-content");
+
+            // 初始化：加载所有场景
+            loadScenes();
+
+            // 事件绑定：添加自定义场景
+            addSceneBtn.addEventListener("click", async () => {
+                const sceneName = newSceneInput.value.trim();
+                if (!sceneName) {
+                    alert("请输入自定义场景名称！");
+                    return;
+                }
+                try {
+                    const res = await axios.post(`${BASE_URL}/scenes`, { scene_name: sceneName });
+                    alert(res.data.msg);
+                    newSceneInput.value = "";
+                    await loadScenes(); // 重新加载场景
+                } catch (err) {
+                    alert(err.response?.data?.detail || "添加场景失败！");
+                }
+            });
+
+            // 事件绑定：开始分析
+            analyzeBtn.addEventListener("click", async () => {
+                const file = fileUpload.files[0];
+                const scene = sceneSelect.value;
+                if (!file) {
+                    alert("请选择要上传的图片/视频文件！");
+                    return;
+                }
+                if (!scene) {
+                    alert("请选择分析场景！");
+                    return;
+                }
+
+                // 构建表单数据
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("scene", scene);
+
+                try {
+                    // 禁用按钮，防止重复提交
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.innerText = "分析中...";
+                    // 请求后端分析接口
+                    const res = await axios.post(`${BASE_URL}/analyze`, formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data"
+                        }
+                    });
+                    // 渲染分析结果
+                    resultSection.classList.remove('hidden');
+                    resultContent.innerText = JSON.stringify(res.data.data, null, 4);
+                } catch (err) {
+                    alert(err.response?.data?.detail || "分析失败！");
+                } finally {
+                    // 启用按钮
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerText = "开始智能分析";
+                }
+            });
+
+            // 加载所有场景（默认+自定义）
+            async function loadScenes() {
+                try {
+                    const res = await axios.get(`${BASE_URL}/scenes`);
+                    const { default_scenes, custom_scenes } = res.data;
+                    // 清空下拉框
+                    sceneSelect.innerHTML = "";
+                    // 添加默认场景
+                    default_scenes.forEach(scene => {
+                        const option = document.createElement("option");
+                        option.value = scene;
+                        option.innerText = scene;
+                        sceneSelect.appendChild(option);
+                    });
+                    // 添加自定义场景
+                    if (custom_scenes.length > 0) {
+                        const optgroup = document.createElement("optgroup");
+                        optgroup.label = "自定义场景";
+                        custom_scenes.forEach(scene => {
+                            const option = document.createElement("option");
+                            option.value = scene;
+                            option.innerText = scene;
+                            optgroup.appendChild(option);
+                        });
+                        sceneSelect.appendChild(optgroup);
+                    }
+                } catch (err) {
+                    alert("加载场景失败！");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
