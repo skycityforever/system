@@ -7,6 +7,13 @@
     <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/开发目录/detection/rt_detr" />
+      </list>
+    </option>
+  </component>
   <component name="TemplatesService">
     <option name="templateFileTypes">
       <list>

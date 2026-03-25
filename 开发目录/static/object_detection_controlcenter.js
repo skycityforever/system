@@ -728,7 +728,8 @@ function updateModelUI() {
         } else if (modelName.includes("YOLOv11") && modelName.includes("姿态估计")) {
             isImplemented = false; // 姿态估计未实现
         } else if (modelName.includes("RT-DETR")) {
-            isImplemented = false; // RT-DETR未实现
+            modelKey = "rt_detr";
+            isImplemented = true;
         } else {
             isImplemented = false; // 其他均未实现
         }
@@ -768,7 +769,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 后端模型名映射到前端模型标识
             const modelMap = {
                 "yolov11": "yolov11_detect",
-                "c2pnet": "c2pnet_dehaze"
+                "c2pnet": "c2pnet_dehaze",
+                "rt_detr": "rt_detr"
             };
             currentDeployModel = modelMap[data.current_model] || "yolov11_detect";
             // 加载完成后同步 UI
@@ -808,8 +810,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             createAlert("功能未实现", "YOLOv11 姿态估计功能暂未开发，敬请期待", "info");
             return;
         } else if (modelName.includes("RT-DETR")) {
-            createAlert("功能未实现", "RT-DETR 目标检测功能暂未开发，敬请期待", "info");
-            return;
+            modelKey = "rt_detr";
+            isImplemented = true;
         } else {
             createAlert("功能未实现", "该模型功能暂未开发，敬请期待", "info");
             return;
@@ -864,13 +866,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        createAlert('推理启动', `正在使用【${currentDeployModel == 'c2pnet_dehaze' ? 'C2PNet去雾' : 'YOLOv11检测'}】模型推理...`, 'info');
+        createAlert('推理启动', `正在使用【${currentDeployModel == 'c2pnet_dehaze' ? 'C2PNet去雾' : currentDeployModel == 'rt_detr' ? 'RT-DETR检测' : 'YOLOv11检测'}】模型推理...`, 'info');
 
         const formData = new FormData();
         formData.append('image', file);
 
         // 关键：把当前模型传给后端
-        const useModel = currentDeployModel === 'c2pnet_dehaze' ? 'c2pnet' : 'yolov11';
+        let useModel = "yolov11";
+        if (currentDeployModel === "c2pnet_dehaze") {
+          useModel = "c2pnet";
+        } else if (currentDeployModel === "rt_detr") {
+          useModel = "rt_detr";
+        }
         formData.append('model', useModel);
 
         try {
@@ -943,7 +950,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 const consoleLog = document.getElementById('consoleLog');
-                let logContent = `<p>&gt; [AI] 推理完成，使用模型：${useModel == 'c2pnet' ? 'C2PNet去雾' : 'YOLOv11检测'}</p>`;
+                let logContent = `<p>&gt; [AI] 推理完成，使用模型：${useModel == 'c2pnet' ? 'C2PNet去雾' : useModel == 'rt_detr' ? 'RT-DETR检测' : 'YOLOv11检测'}</p>`;
                 if (data.detect_count > 0) {
                     logContent += `<p>&gt; [AI] 检测完成，共识别到 ${data.detect_count} 个目标</p>`;
                     data.classes.forEach((c, i) => {

@@ -11,6 +11,7 @@ import psutil
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
+from detection.rt_detr.rtdetr_detect import rtdetr_detect
 from data_transport.device_transport import device_transport_bp
 from data_transport.model_transport import model_transport_bp
 from data_transport.detection_transport import (
@@ -47,6 +48,7 @@ C2PNET_ONNX_PATH = os.path.join(
     os.path.dirname(__file__),
     "./detection/C2PNet-onnxrun-main/C2PNet-onnxrun-main/weights/c2pnet_outdoor_640x640.onnx"
 )
+RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/rtdetr_resnet50.pt')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
@@ -274,6 +276,40 @@ def detect_image_api():
                 "result_text": "C2PNet 去雾完成\n图像清晰度已提升",
                 "classes": [],
                 "latency": 18,
+                "saved_filename": unique_filename
+            })
+
+        # RT-DETR 检测
+        elif model == "rt_detr":
+            results, output_img_path, info = rtdetr_detect(
+                image_path=upload_path,
+                model_path=RTDETR_MODEL_PATH,
+                save_dir=RESULT_FOLDER,
+                show=False
+            )
+            if info['status'] == 'error':
+                return jsonify({'success': False, 'msg': info['msg']}), 500
+
+            result_text = f"RT-DETR 检测完成：{info['detect_count']} 个目标\n"
+            for cls in info['classes']:
+                result_text += f"{cls['class']} {cls['confidence']}%\n"
+
+            result_img_filename = os.path.basename(output_img_path)
+            dirs = glob.glob(os.path.join(RESULT_FOLDER, 'predict*'))
+            if dirs:
+                latest_dir = os.path.basename(max(dirs, key=os.path.getctime))
+                result_image_url = f"/results/{latest_dir}/{result_img_filename}"
+            else:
+                result_image_url = f"/results/{result_img_filename}"
+
+            return jsonify({
+                "success": True,
+                "detect_count": info['detect_count'],
+                "avg_conf": round(sum([c['confidence'] for c in info['classes']])/info['detect_count'],2) if info['detect_count']>0 else 0,
+                "result_image_url": result_image_url,
+                "result_text": result_text,
+                "classes": info['classes'],
+                "latency": 15,
                 "saved_filename": unique_filename
             })
 
