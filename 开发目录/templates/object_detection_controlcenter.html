@@ -18,7 +18,7 @@
   color: #f1f5f9;
   padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6 -1 rgba(0, 0, 0, 0.1), 0 2px 4 -1 rgba(0, 0, 0, 0.06);
   z-index: 9999;
   width: 320px;
   transition: all 0.3s ease;
@@ -141,41 +141,87 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 👇 👇 👇 这里是替换后的模型列表 -->
             <div class="space-y-4 overflow-y-auto custom-scrollbar pr-1 max-h-[220px]">
-                <div class="p-4 rounded-lg bg-cyan-400/10 border border-cyan-400/50 group hover:bg-cyan-400/20 cursor-pointer transition-all">
+                <div class="model-card p-4 rounded-lg bg-cyan-400/10 border border-cyan-400/50 group hover:bg-cyan-400/20 cursor-pointer transition-all" data-model="yolov11_detect">
                     <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-cyan-400">ViT-Polaris V4.2</h4>
+                        <h4 class="font-bold text-cyan-400">YOLOv11 目标检测</h4>
                         <span class="text-[10px] bg-cyan-500 text-white px-1 rounded">当前部署</span>
                     </div>
-                    <p class="text-xs text-slate-300">针对 2026 强降雪场景优化，采用时空注意力增强机制。</p>
+                    <p class="text-xs text-slate-300">通用人体目标检测，支持极端环境下多目标识别。</p>
                     <div class="mt-3 flex items-center justify-between text-[10px] font-mono opacity-60">
-                        <span>FPS: 120 (A100 Edge)</span>
-                        <span>PREC: 98.4%</span>
+                        <span>FPS: 85 (CPU)</span>
+                        <span>PREC: 96.2%</span>
                     </div>
                 </div>
-                <div class="p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer">
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="cawm_maba">
                     <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold">Thermal-Only Transformer</h4>
-                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">沙盘版本</span>
+                        <h4 class="font-bold">CAWM-MABA 极端环境人体识别</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
                     </div>
-                    <p class="text-xs text-slate-400">仅使用红外热成像流作为输入，用于极致低能见度环境。</p>
-                    <div class="mt-3 flex items-center justify-between text-[10px] font-mono opacity-60">
-                        <span>FPS: 240</span>
-                        <span>PREC: 91.0%</span>
-                    </div>
+                    <p class="text-xs text-slate-400">针对暴雨/暴雪/浓雾等极端天气优化的人体识别模型。</p>
                 </div>
-                <div class="p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer">
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="c2pnet_dehaze">
                     <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold">Point-Fusion V2</h4>
-                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待更新</span>
+                        <h4 class="font-bold">C2PNet 去雾算法</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">已实现</span>
                     </div>
-                    <p class="text-xs text-slate-400">深度融合毫米波雷达点云与视觉特征空间的可学习模型。</p>
+                    <p class="text-xs text-slate-400">实时图像去雾，提升极端低能见度环境下图像清晰度。</p>
                 </div>
-                <div class="p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer">
-                    <h4 class="font-bold">Rain-Suppressor Net</h4>
-                    <p class="text-xs text-slate-400">专门用于实时去除暴雨干扰的预处理轻量级网络。</p>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="yolov11_pose">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold">YOLOv11 姿态估计</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
+                    </div>
+                    <p class="text-xs text-slate-400">人体关键点检测，支持跌倒、姿态识别。</p>
+                </div>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="mediapipe_face">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold">MediaPipe 人脸识别</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
+                    </div>
+                    <p class="text-xs text-slate-400">轻量级人脸检测与关键点定位。</p>
+                </div>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="mediapipe_pose">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold">MediaPipe 姿态估计</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
+                    </div>
+                    <p class="text-xs text-slate-400">轻量级人体姿态估计，适合边缘设备。</p>
+                </div>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="rt_detr">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold">RT-DETR 目标检测</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
+                    </div>
+                    <p class="text-xs text-slate-400">实时 DETR 目标检测，精度与速度平衡。</p>
+                </div>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="age_recognition">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold">人物年龄识别</h4>
+                        <span class="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">待部署</span>
+                    </div>
+                    <p class="text-xs text-slate-400">基于人脸特征的年龄估计模型。</p>
+                </div>
+
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="empty_1">
+                    <h4 class="font-bold">空模型 1</h4>
+                    <p class="text-xs text-slate-400">预留模型插槽</p>
+                </div>
+                <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="empty_2">
+                    <h4 class="font-bold">空模型 2</h4>
+                    <p class="text-xs text-slate-400">预留模型插槽</p>
                 </div>
             </div>
+
         </div>
         <div class="glass-panel p-6 rounded-xl flex-1 min-h-[320px] max-h-[420px] flex flex-col">
             <h3 class="text-lg font-bold mb-4">边缘端推送状态</h3>

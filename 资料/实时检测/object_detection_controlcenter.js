@@ -983,3 +983,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+// 实时获取设备状态并更新界面
+async function fetchDeviceStatus() {
+  try {
+    const response = await fetch('/api/device_status');
+    const data = await response.json();
+    if (!data.success) throw new Error('获取设备状态失败');
+
+    // 更新 GPU 显存
+    const gpuPercent = (data.gpu_used / data.gpu_total * 100).toFixed(1);
+    document.getElementById('gpuPercent').textContent = `${gpuPercent}%`;
+    document.getElementById('gpuUsageText').textContent = `${data.gpu_used}GB / ${data.gpu_total}GB`;
+    document.getElementById('gpuProgress').style.width = `${gpuPercent}%`;
+
+    // 更新系统内存
+    const memPercent = (data.mem_used / data.mem_total * 100).toFixed(0);
+    document.getElementById('memPercent').textContent = `${memPercent}%`;
+    document.getElementById('memUsageText').textContent = `${data.mem_used}GB / ${data.mem_total}GB`;
+    document.getElementById('memProgress').style.width = `${memPercent}%`;
+
+    // 更新平均推理延迟（目标 <10ms，进度条按 0-10ms 映射为 0-100%）
+    const latency = data.latency_ms.toFixed(1);
+    const latencyPercent = Math.min((latency / 10) * 100, 100);
+    document.getElementById('latencyValue').textContent = `${latency}ms`;
+    document.getElementById('latencyProgress').style.width = `${latencyPercent}%`;
+
+    // 更新模型准确率（目标 >95%，进度条直接使用百分比）
+    const accuracy = data.accuracy.toFixed(1);
+    document.getElementById('accuracyPercent').textContent = `${accuracy}%`;
+    document.getElementById('accuracyProgress').style.width = `${accuracy}%`;
+  } catch (err) {
+    console.error('获取设备状态失败:', err);
+  }
+}
+
+// 页面加载后立即获取一次，然后每 2 秒轮询更新
+document.addEventListener('DOMContentLoaded', () => {
+  fetchDeviceStatus();
+  setInterval(fetchDeviceStatus, 2000); // 2 秒刷新一次
+});
