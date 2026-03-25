@@ -1,6 +1,5 @@
 from cvzone.PoseModule import PoseDetector
 import cv2
-
 # Initialize the webcam and set it to the third camera (index 2)
 cap = cv2.VideoCapture(0)
 
