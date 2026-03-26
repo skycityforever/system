@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import onnxruntime
 import psutil
+import json
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
@@ -22,6 +23,24 @@ from data_transport.detection_transport import (
 from data_transport.visual_dashboard_api import dashboard_bp
 from flask_cors import CORS
 from llm_integration.llm_client import DoubaoEnvironmentAnalyzer
+
+# ==========================
+# 数据库自动集成（已内置）
+# ==========================
+try:
+    from database_controller.database_controller import (
+        get_db_connection,
+        insert_detection_record,
+        import_detection_records,
+        import_devices,
+        import_models,
+        import_users
+    )
+    DB_ENABLED = True
+    print("✅ 数据库模块加载成功 → 自动同步 JSON → SQLite")
+except Exception as e:
+    DB_ENABLED = False
+    print(f"⚠️ 数据库未启用：{str(e)}")
 
 # GPU 监控库
 try:
@@ -176,7 +195,6 @@ def get_current_model():
 @app.route('/api/device_status', methods=['GET'])
 def device_status():
     try:
-        # GPU 显存
         gpu_used = 0
         gpu_total = 24
         if gpu_available:
@@ -185,7 +203,6 @@ def device_status():
             gpu_used = round(mem.used / 1024**3, 1)
             gpu_total = round(mem.total / 1024**3, 1)
 
-        # 系统内存
         mem = psutil.virtual_memory()
         mem_used = round(mem.used / 1024**3, 1)
         mem_total = round(mem.total / 1024**3, 1)
@@ -207,7 +224,7 @@ def device_status():
         })
 
 # ==========================
-# 统一检测接口
+# 统一检测接口 + 自动同步数据库
 # ==========================
 @app.route('/api/detect', methods=['POST'])
 def detect_image_api():
@@ -236,7 +253,6 @@ def detect_image_api():
                 result_text += f"{cls['class']} {cls['confidence']}%\n"
 
             result_img_filename = os.path.basename(output_img_path)
-
             dirs = glob.glob(os.path.join(RESULT_FOLDER, 'predict*'))
             if dirs:
                 latest_dir = os.path.basename(max(dirs, key=os.path.getctime))
@@ -248,6 +264,23 @@ def detect_image_api():
                 detect_type="图片检测",
                 detect_results=info['classes']
             )
+
+            # ======================
+            # 同步 SQLite
+            # ======================
+            if DB_ENABLED:
+                try:
+                    data = {
+                        "record_id": record_id,
+                        "detect_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "detect_type": "图片检测",
+                        "detect_results": json.dumps(info['classes']),
+                        "llm_suggestion": ""
+                    }
+                    insert_detection_record(data)
+                    print(f"🟢 [DB] 检测记录已保存：{record_id}")
+                except Exception as e:
+                    print(f"🔴 [DB] 保存失败：{e}")
 
             return jsonify({
                 "success": True,
@@ -273,11 +306,21 @@ def detect_image_api():
             cv2.imwrite(save_path, dstimg)
 
             result_image_url = f"/dehaze_results/{result_filename}"
+            record_id = save_detection_record(detect_type="图像去雾", detect_results=[])
 
-            record_id = save_detection_record(
-                detect_type="图像去雾",
-                detect_results=[]
-            )
+            if DB_ENABLED:
+                try:
+                    data = {
+                        "record_id": record_id,
+                        "detect_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "detect_type": "图像去雾",
+                        "detect_results": "[]",
+                        "llm_suggestion": ""
+                    }
+                    insert_detection_record(data)
+                    print(f"🟢 [DB] 去雾记录已保存：{record_id}")
+                except:
+                    pass
 
             return jsonify({
                 "success": True,
@@ -291,9 +334,6 @@ def detect_image_api():
                 "record_id": record_id
             })
 
-        # ====================
-        # ✅ 修复 RT-DETR 404
-        # ====================
         elif model == "rt_detr":
             results, output_img_path, info = rtdetr_detect(
                 image_path=upload_path,
@@ -308,13 +348,22 @@ def detect_image_api():
             for cls in info['classes']:
                 result_text += f"{cls['class']} {cls['confidence']}%\n"
 
-            # ✅ 强制直接访问根目录，修复 404
             result_image_url = f"/results/{os.path.basename(output_img_path)}"
+            record_id = save_detection_record(detect_type="RT-DETR检测", detect_results=info['classes'])
 
-            record_id = save_detection_record(
-                detect_type="RT-DETR检测",
-                detect_results=info['classes']
-            )
+            if DB_ENABLED:
+                try:
+                    data = {
+                        "record_id": record_id,
+                        "detect_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "detect_type": "RT-DETR检测",
+                        "detect_results": json.dumps(info['classes']),
+                        "llm_suggestion": ""
+                    }
+                    insert_detection_record(data)
+                    print(f"🟢 [DB] RT-DETR 记录已保存：{record_id}")
+                except:
+                    pass
 
             return jsonify({
                 "success": True,
@@ -366,6 +415,26 @@ def get_detection_records_api():
         return jsonify({"success": False, "msg": str(e)}),500
 
 # ==========================
+# ✅ 前端修改 JSON → 自动全量同步到数据库
+# ==========================
+@app.route('/api/sync_json_to_db', methods=['POST'])
+def sync_json_to_db():
+    if not DB_ENABLED:
+        return jsonify({"success": False, "msg": "数据库未连接"})
+    try:
+        print("\n=====================================")
+        print("🔄 前端触发同步：JSON → 正在写入 SQLite...")
+        import_detection_records()
+        import_devices()
+        import_models()
+        import_users()
+        print("✅ 同步完成：所有 JSON 已导入数据库")
+        print("=====================================\n")
+        return jsonify({"success": True, "msg": "同步成功"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)})
+
+# ==========================
 # 静态文件服务
 # ==========================
 @app.route('/results/<path:file_path>')
@@ -382,6 +451,20 @@ def get_dehaze_img(filename):
 @app.route('/uploads/<filename>')
 def serve_uploaded_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+# ==========================
+# 启动时自动同步一次
+# ==========================
+if DB_ENABLED:
+    try:
+        print("\n🚀 系统启动 → 自动同步 JSON → SQLite...")
+        import_detection_records()
+        import_devices()
+        import_models()
+        import_users()
+        print("✅ 数据库初始化完成\n")
+    except Exception as e:
+        print(f"⚠️ 同步失败：{e}\n")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
