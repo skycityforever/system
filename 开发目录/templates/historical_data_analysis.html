@@ -138,7 +138,7 @@
 
     <!-- 目标严重程度分析 -->
     <section class="mb-10">
-        <h2 class="text-xl font-bold mb-6 text-cyan-300">目标严重程度分析</h2>
+        <h2 class="text-xl font-bold mb-6 text-cyan-300">目标置信程度分析</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="severityAnalysis">
             <!-- 动态生成 -->
         </div>
@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${severityClass}">${severity}严重程度</span>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${severityClass}">${severity}置信程度</span>
                         <span class="text-xs text-slate-400 flex items-center gap-1">
                             <span class="iconify text-sm" data-icon="solar:exclamation-circle-bold"></span>
                             ${severityText}
