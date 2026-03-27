@@ -1,0 +1,65 @@
+.glass-panel {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+.stat-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.btn-primary {
+    background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(34, 211, 238, 0.3);
+}
+.hidden {
+    display: none;
+}
+.text-success {
+    color: #22c55e;
+}
+.text-error {
+    color: #ef4444;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.6);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.4);
+    border-radius: 3px;
+}
+.scene-filter-btn {
+    background: rgba(30, 41, 59, 0.6);
+    color: #e2e8f0;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+.scene-filter-btn:hover {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* 修复无限拉长的核心代码 */
+#sceneChart {
+    max-height: 120px !important;
+}
+#pestDistributionChart,
+#detectionTrendChart,
+#confidenceDistributionChart {
+    max-height: 300px !important;
+}
+main {
+    min-height: calc(100vh - 128px);
+}
+#recordsList {
+    max-height: 384px;
+    overflow-y: auto;
+}

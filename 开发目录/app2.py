@@ -21,6 +21,11 @@ from data_transport.detection_transport import (
     update_detection_record_llm
 )
 from data_transport.visual_dashboard_api import dashboard_bp
+from data_transport.data_collection_transport import (
+    save_collection_data,
+    get_all_collection_data,
+    get_collection_data_by_scene
+)
 from flask_cors import CORS
 from llm_integration.llm_client import DoubaoEnvironmentAnalyzer
 
@@ -153,6 +158,10 @@ def login():
 @app.route('/register')
 def register():
     return render_template('register.html')
+# 数据采集页面
+@app.route('/data_collection')
+def data_collection():
+    return render_template('data_collection.html')
 
 # ==========================
 # 模型切换接口
@@ -466,5 +475,30 @@ if DB_ENABLED:
     except Exception as e:
         print(f"⚠️ 同步失败：{e}\n")
 
+# 数据采集提交接口
+@app.route('/api/data_collection', methods=['POST'])
+def api_data_collection():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "msg": "无效数据"}), 400
+        # 校验工厂场景工号必填
+        if data.get("scene") == "factory" and not data.get("specific_info", {}).get("worker_id"):
+            return jsonify({"success": False, "msg": "工厂场景工号为必填项"}), 400
+        # 保存数据
+        save_collection_data(data)
+        return jsonify({"success": True, "msg": "数据采集成功"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+# 数据采集记录查询接口（供前端展示）
+@app.route('/api/data_collection/records')
+def api_data_collection_records():
+    scene = request.args.get("scene", "")
+    if scene:
+        data = get_collection_data_by_scene(scene)
+    else:
+        data = get_all_collection_data()
+    return jsonify({"success": True, "records": data})
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
