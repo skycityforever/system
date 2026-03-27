@@ -107,7 +107,9 @@
   </div>
 </nav>
 <main class="pt-24 px-8 pb-12 max-w-[1440px] mx-auto grid grid-cols-12 gap-6">
+    <!-- 左侧 4 列 -->
     <div class="col-span-12 lg:col-span-4 flex flex-col gap-6 h-full">
+        <!-- 模型库 -->
         <div class="glass-panel p-6 rounded-xl">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold">算法模型库</h3>
@@ -141,8 +143,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 👇 👇 👇 这里是替换后的模型列表 -->
             <div class="space-y-4 overflow-y-auto custom-scrollbar pr-1 max-h-[220px]">
                 <div class="model-card p-4 rounded-lg bg-cyan-400/10 border border-cyan-400/50 group hover:bg-cyan-400/20 cursor-pointer transition-all" data-model="yolov11_detect">
                     <div class="flex justify-between items-start mb-2">
@@ -155,7 +155,6 @@
                         <span>PREC: 96.2%</span>
                     </div>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="cawm_maba">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">CAWM-MABA 极端环境人体识别</h4>
@@ -163,7 +162,6 @@
                     </div>
                     <p class="text-xs text-slate-400">针对暴雨/暴雪/浓雾等极端天气优化的人体识别模型。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="c2pnet_dehaze">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">C2PNet 去雾算法</h4>
@@ -171,7 +169,6 @@
                     </div>
                     <p class="text-xs text-slate-400">实时图像去雾，提升极端低能见度环境下图像清晰度。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="yolov11_pose">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">YOLOv11 姿态估计</h4>
@@ -179,7 +176,6 @@
                     </div>
                     <p class="text-xs text-slate-400">人体关键点检测，支持跌倒、姿态识别。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="mediapipe_face">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">MediaPipe 人脸识别</h4>
@@ -187,7 +183,6 @@
                     </div>
                     <p class="text-xs text-slate-400">轻量级人脸检测与关键点定位。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="mediapipe_pose">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">MediaPipe 姿态估计</h4>
@@ -195,7 +190,6 @@
                     </div>
                     <p class="text-xs text-slate-400">轻量级人体姿态估计，适合边缘设备。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="rt_detr">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">RT-DETR 目标检测</h4>
@@ -203,7 +197,6 @@
                     </div>
                     <p class="text-xs text-slate-400">实时 DETR 目标检测，精度与速度平衡。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="age_recognition">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold">人物年龄识别</h4>
@@ -211,7 +204,6 @@
                     </div>
                     <p class="text-xs text-slate-400">基于人脸特征的年龄估计模型。</p>
                 </div>
-
                 <div class="model-card p-4 rounded-lg bg-slate-800 border border-slate-700 group hover:border-cyan-500/50 transition-all cursor-pointer" data-model="empty_1">
                     <h4 class="font-bold">空模型 1</h4>
                     <p class="text-xs text-slate-400">预留模型插槽</p>
@@ -221,8 +213,9 @@
                     <p class="text-xs text-slate-400">预留模型插槽</p>
                 </div>
             </div>
-
         </div>
+
+        <!-- 边缘端推送 -->
         <div class="glass-panel p-6 rounded-xl flex-1 min-h-[320px] max-h-[420px] flex flex-col">
             <h3 class="text-lg font-bold mb-4">边缘端推送状态</h3>
             <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
@@ -293,62 +286,67 @@
                 </div>
             </div>
         </div>
+
+        <!-- 模型性能监控（已绑定ID，布局正常） -->
         <div class="glass-panel p-6 rounded-xl">
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                 <span class="iconify text-cyan-400" data-icon="solar:chart-line-bold"></span>模型性能监控
             </h3>
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-bold text-xs">17.5%</div>
+                    <div id="gpuPercent" class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-bold text-xs">17.5%</div>
                     <div class="flex-1">
                         <div class="flex justify-between text-xs mb-1">
                             <span>GPU 显存占用</span>
-                            <span class="text-slate-500">4.2GB / 24GB</span>
+                            <span id="gpuUsageText" class="text-slate-500">4.2GB / 24GB</span>
                         </div>
                         <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-orange-500 w-[17.5%]"></div>
+                            <div id="gpuProgress" class="h-full bg-orange-500 w-[17.5%]"></div>
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs">23%</div>
+                    <div id="memPercent" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs">23%</div>
                     <div class="flex-1">
                         <div class="flex justify-between text-xs mb-1">
                             <span>系统内存占用</span>
-                            <span class="text-slate-500">18.4GB / 80GB</span>
+                            <span id="memUsageText" class="text-slate-500">18.4GB / 80GB</span>
                         </div>
                         <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-blue-500 w-[23%]"></div>
+                            <div id="memProgress" class="h-full bg-blue-500 w-[23%]"></div>
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-500 font-bold text-xs">8.5ms</div>
+                    <div id="latencyValue" class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-500 font-bold text-xs">8.5ms</div>
                     <div class="flex-1">
                         <div class="flex justify-between text-xs mb-1">
                             <span>平均推理延迟</span>
                             <span class="text-slate-500">目标 < 10ms</span>
                         </div>
                         <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-cyan-500 w-[85%]"></div>
+                            <div id="latencyProgress" class="h-full bg-cyan-500 w-[85%]"></div>
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold text-xs">98.2%</div>
+                    <div id="accuracyPercent" class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold text-xs">98.2%</div>
                     <div class="flex-1">
                         <div class="flex justify-between text-xs mb-1">
                             <span>模型准确率</span>
                             <span class="text-slate-500">目标 > 95%</span>
                         </div>
                         <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-green-500 w-[98.2%]"></div>
+                            <div id="accuracyProgress" class="h-full bg-green-500 w-[98.2%]"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- 左侧结束 -->
+
+    <!-- 右侧 8 列 -->
     <div class="col-span-12 lg:col-span-8 space-y-6">
         <div class="glass-panel p-6 rounded-xl min-h-[400px] flex flex-col">
             <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
@@ -361,8 +359,6 @@
                     <button class="tab-btn px-4 py-1 text-sm border-t-2 border-transparent hover:text-cyan-400" id="cameraTabBtn">摄像头实时</button>
                 </div>
             </div>
-
-            <!-- 图片/视频模式：保留原左右布局 -->
             <div id="imageVideoLayout" class="flex-1 grid grid-cols-2 gap-6 pb-6">
                 <div class="flex flex-col gap-3">
                     <div id="sampleDropArea" class="flex-1 border-2 border-dashed border-cyan-500/50 rounded-xl relative group overflow-hidden bg-slate-900 flex items-center justify-center cursor-pointer hover:border-cyan-500 transition-colors">
@@ -432,12 +428,8 @@
                     <button id="startInferenceBtn" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-900/20">开始模拟推理</button>
                 </div>
             </div>
-
-            <!-- 摄像头模式：全屏展示 -->
             <div id="cameraLayout" class="hidden flex-1 flex flex-col gap-4 pb-6">
-                <!-- 摄像头实时预览区域（全屏） -->
                 <div id="cameraPreviewContainer" class="flex-1 glass-panel rounded-xl overflow-hidden relative flex flex-col items-center justify-center">
-                    <!-- 未启动时状态 -->
                     <div id="cameraIdleState" class="text-center">
                         <span class="iconify text-6xl text-slate-500 mb-4" data-icon="solar:camera-linear"></span>
                         <p class="text-lg text-slate-300 mb-6">摄像头实时监控画面</p>
@@ -446,22 +438,16 @@
                             <span>启动摄像头</span>
                         </button>
                     </div>
-
-                    <!-- 已启动时状态（实时画面+检测框） -->
                     <div id="cameraActiveState" class="hidden w-full h-full relative">
                         <video id="cameraVideo" class="w-full h-full object-cover" autoplay playsinline></video>
                         <canvas id="cameraCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-                        <!-- 检测信息悬浮层 -->
                         <div class="absolute top-4 right-4 bg-slate-900/80 rounded-lg p-3 border border-cyan-500/30">
                             <p class="text-xs text-cyan-400 font-mono mb-1">实时检测中</p>
                             <p class="text-xs text-green-400 font-mono">FPS: <span id="cameraFps">30</span></p>
                         </div>
                     </div>
                 </div>
-
-                <!-- 控制栏与统计区域 -->
                 <div class="flex items-center justify-between gap-4 flex-wrap">
-                    <!-- 控制按钮 -->
                     <div class="flex items-center gap-3">
                         <button id="cameraStartDetectBtn" class="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-lg transition-all">
                             <span class="iconify" data-icon="solar:play-bold"></span>
@@ -476,8 +462,6 @@
                             <span>拍照</span>
                         </button>
                     </div>
-
-                    <!-- 实时统计面板 -->
                     <div class="stats-panel flex items-center gap-8">
                         <div class="text-center">
                             <p class="text-xs text-slate-400 mb-1">总检测目标数</p>
@@ -494,22 +478,15 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 视频流控制栏（仅在视频 Tab 显示） -->
             <div id="videoControlBar" class="hidden glass-panel rounded-xl p-4 mt-4 flex items-center gap-6">
-              <!-- 开始/停止按钮 -->
               <button id="videoStartStopBtn" class="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all">
                 <span class="iconify" data-icon="solar:play-bold"></span>
                 <span>开始</span>
               </button>
-
-              <!-- 导出帧按钮 -->
               <button id="exportFrameBtn" class="flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg border border-slate-600 transition-all">
                 <span class="iconify" data-icon="solar:floppy-disk-bold"></span>
                 <span>导出帧</span>
               </button>
-
-              <!-- 每N帧检测一次 -->
               <div class="flex items-center gap-3 ml-auto">
                 <span class="text-sm text-slate-300">每N帧检测一次:</span>
                 <div class="flex items-center bg-slate-900 border border-cyan-500/50 rounded-md overflow-hidden">
@@ -523,7 +500,6 @@
                 </div>
               </div>
             </div>
-
             <div class="glass-panel rounded-xl p-4 bg-black/40 border-slate-700">
                 <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase italic tracking-widest">实时推理日志 (CONSOLE)</h4>
                 <div id="consoleLog" class="font-mono text-[10px] text-cyan-500/80 h-24 overflow-y-auto space-y-1">

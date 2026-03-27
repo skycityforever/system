@@ -726,33 +726,31 @@ function updateModelUI() {
             modelKey = "c2pnet_dehaze";
             isImplemented = true;
         } else if (modelName.includes("YOLOv11") && modelName.includes("姿态估计")) {
-            isImplemented = false; // 姿态估计未实现
+            modelKey = "yolov11_pose";
+            isImplemented = true; // ✅ 这里改成 true，姿态已实现
         } else if (modelName.includes("RT-DETR")) {
             modelKey = "rt_detr";
             isImplemented = true;
         } else {
-            isImplemented = false; // 其他均未实现
+            isImplemented = false;
         }
 
         // 重置所有卡片样式
         card.classList.remove('bg-cyan-400/10', 'border-cyan-400/50');
         card.classList.add('bg-slate-800', 'border-slate-700');
 
-        // 精准定位徽章（优先找带 "当前部署" / "待部署" 的 span）
+        // 精准定位徽章
         const badge = card.querySelector('span.rounded');
         if (badge) {
             if (!isImplemented) {
-                // 未实现模型：橙色徽章
                 badge.className = 'text-[10px] bg-orange-500 text-white px-1 rounded';
                 badge.textContent = '未实现';
             } else if (modelKey === currentDeployModel) {
-                // 当前部署模型：高亮 + 绿色徽章
                 card.classList.remove('bg-slate-800', 'border-slate-700');
                 card.classList.add('bg-cyan-400/10', 'border-cyan-400/50');
                 badge.className = 'text-[10px] bg-cyan-500 text-white px-1 rounded';
                 badge.textContent = '当前部署';
             } else {
-                // 其他已实现模型：灰色 + 待部署
                 badge.className = 'text-[10px] bg-slate-700 text-slate-400 px-1 rounded';
                 badge.textContent = '待部署';
             }
@@ -770,10 +768,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             const modelMap = {
                 "yolov11": "yolov11_detect",
                 "c2pnet": "c2pnet_dehaze",
-                "rt_detr": "rt_detr"
+                "rt_detr": "rt_detr",
+                "yolov11_pose": "yolov11_pose" // ✅ 加上姿态
             };
             currentDeployModel = modelMap[data.current_model] || "yolov11_detect";
-            // 加载完成后同步 UI
             updateModelUI();
         }
     } catch (e) {
@@ -786,20 +784,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const modelCard = e.target.closest('.space-y-4 > div');
         if (!modelCard) return;
 
-        // 停止事件冒泡
         e.stopPropagation();
         e.preventDefault();
 
-        // 获取当前点击的模型名称
         const h4 = modelCard.querySelector('h4');
         if (!h4) return;
         const modelName = h4.textContent.trim();
 
-        // 映射模型：根据文字匹配模型类型
         let modelKey = "";
         let isImplemented = false;
 
-        // 严格区分模型类型
         if (modelName.includes("YOLO") && modelName.includes("目标检测") && !modelName.includes("姿态")) {
             modelKey = "yolov11_detect";
             isImplemented = true;
@@ -807,8 +801,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             modelKey = "c2pnet_dehaze";
             isImplemented = true;
         } else if (modelName.includes("YOLOv11") && modelName.includes("姿态估计")) {
-            createAlert("功能未实现", "YOLOv11 姿态估计功能暂未开发，敬请期待", "info");
-            return;
+            modelKey = "yolov11_pose";
+            isImplemented = true;
         } else if (modelName.includes("RT-DETR")) {
             modelKey = "rt_detr";
             isImplemented = true;
@@ -817,13 +811,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 未实现直接返回
-        if (!isImplemented) {
-            createAlert("功能未实现", "该模型功能暂未开发，敬请期待", "info");
-            return;
-        }
+        if (!isImplemented) return;
 
-        // 同步到后端
         try {
             const resp = await fetch('/api/set_current_model', {
                 method: 'POST',
@@ -837,12 +826,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 更新全局当前模型
         currentDeployModel = modelKey;
-
-        // 同步更新所有卡片 UI
         updateModelUI();
-
         createAlert("模型切换成功", `当前已部署：${modelName}`, "success");
     });
 });
@@ -854,7 +839,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const startInferenceBtn = document.getElementById('startInferenceBtn');
     if (!startInferenceBtn) return;
 
-    // 克隆替换原有点击事件，避免冲突
     const newBtn = startInferenceBtn.cloneNode(true);
     startInferenceBtn.parentNode.replaceChild(newBtn, startInferenceBtn);
 
@@ -866,18 +850,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        createAlert('推理启动', `正在使用【${currentDeployModel == 'c2pnet_dehaze' ? 'C2PNet去雾' : currentDeployModel == 'rt_detr' ? 'RT-DETR检测' : 'YOLOv11检测'}】模型推理...`, 'info');
+        // ✅ 姿态提示文字
+        const modelText =
+            currentDeployModel === 'c2pnet_dehaze' ? 'C2PNet去雾' :
+            currentDeployModel === 'rt_detr' ? 'RT-DETR检测' :
+            currentDeployModel === 'yolov11_pose' ? 'YOLOv11姿态估计' :
+            'YOLOv11检测';
+
+        createAlert('推理启动', `正在使用【${modelText}】模型推理...`, 'info');
 
         const formData = new FormData();
         formData.append('image', file);
 
-        // 关键：把当前模型传给后端
+        // ✅ 关键：姿态模型正确传给后端
         let useModel = "yolov11";
         if (currentDeployModel === "c2pnet_dehaze") {
-          useModel = "c2pnet";
+            useModel = "c2pnet";
         } else if (currentDeployModel === "rt_detr") {
-          useModel = "rt_detr";
+            useModel = "rt_detr";
+        } else if (currentDeployModel === "yolov11_pose") {
+            useModel = "yolov11_pose"; // ✅ 这里加上姿态
         }
+
         formData.append('model', useModel);
 
         try {
@@ -895,7 +889,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultPreviewImg.src = data.result_image_url;
                 resultPreviewImg.style.opacity = '1';
 
-                // 其余原有逻辑保持不变
                 const resultBboxLabel = document.getElementById('resultBboxLabel');
                 if (data.detect_count > 0) {
                     const firstCls = data.classes[0];
@@ -950,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 const consoleLog = document.getElementById('consoleLog');
-                let logContent = `<p>&gt; [AI] 推理完成，使用模型：${useModel == 'c2pnet' ? 'C2PNet去雾' : useModel == 'rt_detr' ? 'RT-DETR检测' : 'YOLOv11检测'}</p>`;
+                let logContent = `<p>&gt; [AI] 推理完成，使用模型：${modelText}</p>`;
                 if (data.detect_count > 0) {
                     logContent += `<p>&gt; [AI] 检测完成，共识别到 ${data.detect_count} 个目标</p>`;
                     data.classes.forEach((c, i) => {
@@ -989,4 +982,43 @@ document.addEventListener('DOMContentLoaded', function() {
             createAlert('网络错误', '无法连接后端服务', 'error');
         }
     });
+});
+// 实时获取设备状态并更新界面
+async function fetchDeviceStatus() {
+  try {
+    const response = await fetch('/api/device_status');
+    const data = await response.json();
+    if (!data.success) throw new Error('获取设备状态失败');
+
+    // 更新 GPU 显存
+    const gpuPercent = (data.gpu_used / data.gpu_total * 100).toFixed(1);
+    document.getElementById('gpuPercent').textContent = `${gpuPercent}%`;
+    document.getElementById('gpuUsageText').textContent = `${data.gpu_used}GB / ${data.gpu_total}GB`;
+    document.getElementById('gpuProgress').style.width = `${gpuPercent}%`;
+
+    // 更新系统内存
+    const memPercent = (data.mem_used / data.mem_total * 100).toFixed(0);
+    document.getElementById('memPercent').textContent = `${memPercent}%`;
+    document.getElementById('memUsageText').textContent = `${data.mem_used}GB / ${data.mem_total}GB`;
+    document.getElementById('memProgress').style.width = `${memPercent}%`;
+
+    // 更新平均推理延迟（目标 <10ms，进度条按 0-10ms 映射为 0-100%）
+    const latency = data.latency_ms.toFixed(1);
+    const latencyPercent = Math.min((latency / 10) * 100, 100);
+    document.getElementById('latencyValue').textContent = `${latency}ms`;
+    document.getElementById('latencyProgress').style.width = `${latencyPercent}%`;
+
+    // 更新模型准确率（目标 >95%，进度条直接使用百分比）
+    const accuracy = data.accuracy.toFixed(1);
+    document.getElementById('accuracyPercent').textContent = `${accuracy}%`;
+    document.getElementById('accuracyProgress').style.width = `${accuracy}%`;
+  } catch (err) {
+    console.error('获取设备状态失败:', err);
+  }
+}
+
+// 页面加载后立即获取一次，然后每 2 秒轮询更新
+document.addEventListener('DOMContentLoaded', () => {
+  fetchDeviceStatus();
+  setInterval(fetchDeviceStatus, 2000); // 2 秒刷新一次
 });

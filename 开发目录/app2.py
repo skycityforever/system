@@ -12,6 +12,7 @@ import json
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
+from detection.yolo11_pos.yolov11_pose_detect import yolov11_pose_detect
 from detection.rt_detr.rtdetr_detect import rtdetr_detect
 from data_transport.device_transport import device_transport_bp
 from data_transport.model_transport import model_transport_bp
@@ -72,8 +73,8 @@ C2PNET_ONNX_PATH = os.path.join(
     os.path.dirname(__file__),
     "./detection/C2PNet-onnxrun-main/C2PNet-onnxrun-main/weights/c2pnet_outdoor_640x640.onnx"
 )
-RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/rt_detr/rtdetr-l.pt')
-
+RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/rtdetr-l.pt')
+YOLOV11_POSE_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/yolo11s-pose.pt')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
@@ -385,7 +386,53 @@ def detect_image_api():
                 "saved_filename": unique_filename,
                 "record_id": record_id
             })
+        elif model == "yolov11_pose":
+            results, output_img_path, info = yolov11_pose_detect(
+                image_path=upload_path,
+                model_path=YOLOV11_POSE_MODEL_PATH,
+                save_dir=RESULT_FOLDER,
+                show=False
+            )
+            if info['status'] == 'error':
+                return jsonify({'success': False, 'msg': info['msg']}), 500
 
+            result_text = f"姿态估计完成：{info['detect_count']} 个人体\n"
+            for cls in info['classes']:
+                result_text += f"{cls['class']} {cls['confidence']}% | 姿态: {cls['pose_label']}\n"
+
+            result_img_filename = os.path.basename(output_img_path)
+            result_image_url = f"/results/{result_img_filename}"
+
+            record_id = save_detection_record(
+                detect_type="姿态估计",
+                detect_results=info['classes']
+            )
+
+            if DB_ENABLED:
+                try:
+                    data = {
+                        "record_id": record_id,
+                        "detect_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "detect_type": "姿态估计",
+                        "detect_results": json.dumps(info['classes']),
+                        "llm_suggestion": ""
+                    }
+                    insert_detection_record(data)
+                except:
+                    pass
+
+            return jsonify({
+                "success": True,
+                "detect_count": info['detect_count'],
+                "avg_conf": round(sum([c['confidence'] for c in info['classes']]) / info['detect_count'], 2) if info[
+                                                                                                                    'detect_count'] > 0 else 0,
+                "result_image_url": result_image_url,
+                "result_text": result_text,
+                "classes": info['classes'],
+                "latency": 14,
+                "saved_filename": unique_filename,
+                "record_id": record_id
+            })
         else:
             return jsonify({"success": False, "msg": "该模型暂未实现"}), 400
 
