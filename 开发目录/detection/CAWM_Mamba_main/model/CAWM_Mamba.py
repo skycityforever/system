@@ -6,7 +6,11 @@ from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from pdb import set_trace as stx
 import numbers
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from mamba.mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
+import sys
+from pathlib import Path
+# 把项目根目录（CAWM-Mamba-main）加入 sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent))  # 向上跳两级：model/ → 根目录
+from 开发目录.detection.CAWM_Mamba_main.mamba.mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 from einops import rearrange
 import math
 from typing import Optional, Callable
