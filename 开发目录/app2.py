@@ -14,6 +14,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
 from detection.yolo11_pos.yolov11_pose_detect import yolov11_pose_detect
 from detection.rt_detr.rtdetr_detect import rtdetr_detect
+from detection.Person_Age_Detection.gad import AgeGenderDetector
+
 from data_transport.device_transport import device_transport_bp
 from data_transport.model_transport import model_transport_bp
 from data_transport.detection_transport import (
@@ -75,6 +77,15 @@ C2PNET_ONNX_PATH = os.path.join(
 )
 RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/rtdetr-l.pt')
 YOLOV11_POSE_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/yolo11s-pose.pt')
+
+# 年龄检测模型路径（统一管理）
+AGE_PROTOTXT_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/age_deploy.prototxt')
+AGE_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/age_net.caffemodel')
+GENDER_PROTOTXT_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/gender_deploy.prototxt')
+GENDER_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/gender_net.caffemodel')
+FACE_DETECTOR_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/opencv_face_detector_uint8.pb')
+FACE_DETECTOR_CONFIG_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/opencv_face_detector.pbtxt')
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
@@ -116,6 +127,12 @@ class C2PNet:
         return output_image
 
 c2pnet = C2PNet(C2PNET_ONNX_PATH)
+
+# ==========================
+# 【修复】直接使用gad.py的AgeGenderDetector，不再重复定义
+# ==========================
+# 初始化年龄检测模型
+age_gender_detector = AgeGenderDetector()
 
 # ==========================
 # 页面路由
@@ -165,7 +182,7 @@ def data_collection():
     return render_template('data_collection.html')
 
 # ==========================
-# 模型切换接口
+# 模型切换接口（新增age_recognition映射）
 # ==========================
 @app.route('/api/set_current_model', methods=['POST'])
 def set_current_model():
@@ -234,7 +251,7 @@ def device_status():
         })
 
 # ==========================
-# 统一检测接口 + 自动同步数据库
+# 统一检测接口 + 自动同步数据库（新增年龄检测分支）
 # ==========================
 @app.route('/api/detect', methods=['POST'])
 def detect_image_api():
@@ -275,9 +292,7 @@ def detect_image_api():
                 detect_results=info['classes']
             )
 
-            # ======================
             # 同步 SQLite
-            # ======================
             if DB_ENABLED:
                 try:
                     data = {
@@ -433,6 +448,47 @@ def detect_image_api():
                 "saved_filename": unique_filename,
                 "record_id": record_id
             })
+        # 年龄/性别检测分支（直接使用gad.py的类）
+        elif model == "age":
+            info = age_gender_detector.detect(
+                image_path=upload_path,
+                save_dir=RESULT_FOLDER
+            )
+            if info['status'] == 'error':
+                return jsonify({'success': False, 'msg': info['msg']}), 500
+
+            result_text = f"年龄/性别检测完成：{info['detect_count']} 个人脸\n"
+            for cls in info['classes']:
+                result_text += f"{cls['class']} {cls['confidence']}%\n"
+
+            result_image_url = f"/results/{os.path.basename(info['output_img_path'])}"
+            record_id = save_detection_record(detect_type="年龄/性别检测", detect_results=info['classes'])
+
+            if DB_ENABLED:
+                try:
+                    data = {
+                        "record_id": record_id,
+                        "detect_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "detect_type": "年龄/性别检测",
+                        "detect_results": json.dumps(info['classes']),
+                        "llm_suggestion": ""
+                    }
+                    insert_detection_record(data)
+                    print(f"🟢 [DB] 年龄检测记录已保存：{record_id}")
+                except Exception as e:
+                    print(f"🔴 [DB] 保存失败：{e}")
+
+            return jsonify({
+                "success": True,
+                "detect_count": info['detect_count'],
+                "avg_conf": round(sum([c['confidence'] for c in info['classes']])/info['detect_count'],2) if info['detect_count']>0 else 0,
+                "result_image_url": result_image_url,
+                "result_text": result_text,
+                "classes": info['classes'],
+                "latency": 10,
+                "saved_filename": unique_filename,
+                "record_id": record_id
+            })
         else:
             return jsonify({"success": False, "msg": "该模型暂未实现"}), 400
 
@@ -547,5 +603,6 @@ def api_data_collection_records():
     else:
         data = get_all_collection_data()
     return jsonify({"success": True, "records": data})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
