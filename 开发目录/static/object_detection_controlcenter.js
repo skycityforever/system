@@ -519,6 +519,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const data = await response.json();
                 if (data.success) {
+                    // 提取所有置信度数据
+                    const confidenceList = data.classes.map(c => c.confidence);
+                    // 更新置信度分布图表
+                    updateConfidenceChart(confidenceList);
                     const resultTextPanel = document.getElementById('resultTextPanel');
                     resultTextPanel.innerHTML = data.result_text.replace(/\n/g, '<br>');
                     const resultPreviewImg = document.getElementById('resultPreviewImg');
@@ -907,4 +911,169 @@ async function fetchDeviceStatus() {
 document.addEventListener('DOMContentLoaded', () => {
   fetchDeviceStatus();
   setInterval(fetchDeviceStatus, 2000);
+});
+
+// ==========================
+// 置信度分布图表实现
+// ==========================
+let confidenceChart = null;
+let confidenceData = []; // 存储所有置信度数据
+
+// 初始化Chart.js图表
+function initConfidenceChart() {
+    const ctx = document.getElementById('confidenceChart').getContext('2d');
+    const emptyState = document.getElementById('confidenceEmptyState');
+
+    // 图表配置（完全适配科幻暗黑风格）
+    confidenceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['0-10%', '10-20%', '20-30%', '30-40%', '40-50%', '50-60%', '60-70%', '70-80%', '80-90%', '90-100%'],
+            datasets: [{
+                label: '目标数量',
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.7)',   // 0-30% 红色系（低置信度）
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',  // 30-60% 黄色系（中置信度）
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(34, 211, 238, 0.7)',  // 60-90% 青色系（高置信度）
+                    'rgba(34, 211, 238, 0.7)',
+                    'rgba(34, 211, 238, 0.7)',
+                    'rgba(34, 197, 94, 0.7)'    // 90-100% 绿色系（极高置信度）
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(34, 211, 238, 1)',
+                    'rgba(34, 211, 238, 1)',
+                    'rgba(34, 211, 238, 1)',
+                    'rgba(34, 197, 94, 1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.8,
+                categoryPercentage: 0.9
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#22d3ee',
+                    bodyColor: '#f1f5f9',
+                    borderColor: 'rgba(34, 211, 238, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `该区间目标数: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(30, 41, 59, 0.5)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(30, 41, 59, 0.5)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: {
+                            size: 12
+                        },
+                        stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: '目标数量',
+                        color: '#22d3ee',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 800,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+
+    // 初始隐藏图表，显示空状态
+    ctx.canvas.style.display = 'none';
+    emptyState.style.display = 'flex';
+}
+
+// 更新置信度分布图表数据
+function updateConfidenceChart(confidenceList) {
+    if (!confidenceChart) return;
+
+    const ctx = document.getElementById('confidenceChart');
+    const emptyState = document.getElementById('confidenceEmptyState');
+
+    // 将新的置信度数据添加到全局数组
+    confidenceData = confidenceData.concat(confidenceList);
+
+    // 按10%区间分组统计
+    const bins = new Array(10).fill(0);
+    confidenceData.forEach(conf => {
+        const binIndex = Math.min(Math.floor(conf / 10), 9);
+        bins[binIndex]++;
+    });
+
+    // 更新图表数据
+    confidenceChart.data.datasets[0].data = bins;
+    confidenceChart.update();
+
+    // 显示图表，隐藏空状态
+    ctx.style.display = 'block';
+    emptyState.style.display = 'none';
+}
+
+// 重置置信度图表
+function resetConfidenceChart() {
+    if (!confidenceChart) return;
+
+    confidenceData = [];
+    confidenceChart.data.datasets[0].data = new Array(10).fill(0);
+    confidenceChart.update();
+
+    const ctx = document.getElementById('confidenceChart');
+    const emptyState = document.getElementById('confidenceEmptyState');
+    ctx.style.display = 'none';
+    emptyState.style.display = 'flex';
+}
+
+// 页面加载完成后初始化图表
+document.addEventListener('DOMContentLoaded', function() {
+    initConfidenceChart();
 });

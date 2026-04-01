@@ -588,10 +588,13 @@
                 </div>
             </div>
             <div id="tab-confidence" class="tab-content hidden">
-                <div class="glass-panel p-4 rounded-lg min-h-[300px] flex items-center justify-center">
-                    <p class="text-slate-500">置信度分布图表区域（可后续接入 Chart.js 绘制直方图/分布图）</p>
+                <div class="glass-panel p-4 rounded-lg min-h-[300px] relative">
+                    <canvas id="confidenceChart"></canvas>
+                    <div id="confidenceEmptyState" class="absolute inset-0 flex items-center justify-center">
+                        <p class="text-slate-500">暂无检测数据，执行推理后自动生成置信度分布</p>
+                    </div>
                 </div>
-            </div>
+        </div>
         </div>
     </div>
 </main>

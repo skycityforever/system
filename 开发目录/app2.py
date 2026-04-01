@@ -78,13 +78,6 @@ C2PNET_ONNX_PATH = os.path.join(
 RTDETR_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/rtdetr-l.pt')
 YOLOV11_POSE_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/model_pt/yolo11s-pose.pt')
 
-# 年龄检测模型路径（统一管理）
-AGE_PROTOTXT_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/age_deploy.prototxt')
-AGE_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/age_net.caffemodel')
-GENDER_PROTOTXT_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/gender_deploy.prototxt')
-GENDER_MODEL_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/gender_net.caffemodel')
-FACE_DETECTOR_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/opencv_face_detector_uint8.pb')
-FACE_DETECTOR_CONFIG_PATH = os.path.join(os.path.dirname(__file__), './detection/Person_Age_Detection/opencv_face_detector.pbtxt')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
@@ -549,11 +542,18 @@ def sync_json_to_db():
 # ==========================
 # 静态文件服务
 # ==========================
-@app.route('/results/<path:file_path>')
-def serve_result_image(file_path):
+@app.route('/results/<filename>')
+def serve_result_image(filename):
     try:
-        return send_from_directory(RESULT_FOLDER, file_path)
-    except:
+        # 查找最新的predict目录
+        result_dirs = glob.glob(os.path.join(RESULT_FOLDER, 'predict*'))
+        if result_dirs:
+            latest_result_dir = max(result_dirs, key=os.path.getctime)
+            return send_from_directory(latest_result_dir, filename)
+        # 回退到主目录
+        return send_from_directory(RESULT_FOLDER, filename)
+    except Exception:
+        # 返回默认图片
         return send_from_directory('static', 'default.png')
 
 @app.route('/dehaze_results/<filename>')
