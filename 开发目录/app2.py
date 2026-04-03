@@ -542,18 +542,11 @@ def sync_json_to_db():
 # ==========================
 # 静态文件服务
 # ==========================
-@app.route('/results/<filename>')
-def serve_result_image(filename):
+@app.route('/results/<path:file_path>')
+def serve_result_image(file_path):
     try:
-        # 查找最新的predict目录
-        result_dirs = glob.glob(os.path.join(RESULT_FOLDER, 'predict*'))
-        if result_dirs:
-            latest_result_dir = max(result_dirs, key=os.path.getctime)
-            return send_from_directory(latest_result_dir, filename)
-        # 回退到主目录
-        return send_from_directory(RESULT_FOLDER, filename)
-    except Exception:
-        # 返回默认图片
+        return send_from_directory(RESULT_FOLDER, file_path)
+    except:
         return send_from_directory('static', 'default.png')
 
 @app.route('/dehaze_results/<filename>')
