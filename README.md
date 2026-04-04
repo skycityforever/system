@@ -198,3 +198,119 @@ flowchart TD
     class C11,C12,D11,D12,E11,E12,F11,F12,G11,G12,H11,H12,I11,I12,I21,I31,I32,J11,J21,J31,J41 box
 ```
 
+### 路由转发图
+
+```mermaid
+flowchart TD
+    %% ===== 样式定义 =====
+    classDef userLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:1px,color:#0d47a1
+    classDef loginLayer fill:#c8e6c9,stroke:#388e3c,stroke-width:1px,color:#1b5e20
+    classDef pageLayer fill:#f3e5f5,stroke:#6a1b9a,stroke-width:1px,color:#4a148c
+    classDef apiLayer fill:#fff3e0,stroke:#f57c00,stroke-width:1px,color:#e65100
+    classDef staticLayer fill:#eeeeee,stroke:#616161,stroke-width:1px,color:#212121
+    classDef tip fill:#fff9c4,stroke:#fbc02d,stroke-width:1px,color:#f57f17
+    classDef title fill:#e0f7fa,stroke:#006064,stroke-width:2px,font-weight:bold
+
+    %% ===== 顶层结构 =====
+    A["浏览器/移动端<br/>(Bootstrap前端)"]:::userLayer
+
+    B["/login<br/>(GET/POST | 免登)"]:::loginLayer
+    tipB["登录失败 → 重定向自身<br/>登录成功 → 核心功能"]:::tip
+
+    A -->|初始访问| B
+    B -.-> tipB
+
+    %% ===== 核心业务页面 =====
+    subgraph CORE title
+        direction LR
+        P1["/ 导航中心"]:::pageLayer
+        P2["/dashboard 可视化大屏"]:::pageLayer
+        P3["/statistics 数据统计分析"]:::pageLayer
+        P4["/object_detection_controlcenter<br/>文件上传检测"]:::pageLayer
+        P5["/camera 摄像头检测"]:::pageLayer
+        P6["/history 历史记录"]:::pageLayer
+        P7["/ai_assistant AI助手"]:::pageLayer
+        P8["/data_collection 数据采集"]:::pageLayer
+        P9["/weather_alert 极端天气预警"]:::pageLayer
+        P10["/model_management 模型管理"]:::pageLayer
+        P11["/edge_device_management 设备管理"]:::pageLayer
+        P12["/user_center 用户中心"]:::pageLayer
+        P13["/register 注册页"]:::pageLayer
+    end
+    class CORE title
+
+    B -->|登录成功| P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13
+
+    %% ===== 功能接口 =====
+    subgraph API title
+        direction LR
+        A1["/api/detect<br/>文件上传检测"]:::apiLayer
+        A2["/api/*_results/weather/data<br/>检测/数据获取"]:::apiLayer
+        A3["/api/weather/detect<br/>天气图片检测"]:::apiLayer
+        A4["/api/weather/stream<br/>摄像头/视频流检测"]:::apiLayer
+        A5["/api/start/stop_camera/video<br/>摄像头/视频控制"]:::apiLayer
+        A6["/api/alert/status<br/>预警状态获取"]:::apiLayer
+        A7["/api/alert/history<br/>预警历史查询"]:::apiLayer
+        A8["/api/weather/status<br/>天气状态轮询"]:::apiLayer
+        A9["/api/verify-login<br/>登录验证"]:::apiLayer
+        A10["/api/register<br/>用户注册"]:::apiLayer
+        A11["/api/generate-code<br/>验证码生成"]:::apiLayer
+        A12["/api/logout<br/>登出"]:::apiLayer
+        A13["/api/current-user<br/>当前用户信息"]:::apiLayer
+        A14["/api/device_status<br/>设备状态监控"]:::apiLayer
+        A15["/api/sync_json_to_db<br/>数据同步"]:::apiLayer
+        A16["/api/analyze_environment<br/>环境分析"]:::apiLayer
+        A17["/api/data_collection<br/>数据采集提交"]:::apiLayer
+        A18["/api/detection_records<br/>检测记录查询"]:::apiLayer
+    end
+    class API title
+
+    %% ===== 模板化页面 =====
+    subgraph TEMPLATE title
+        direction LR
+        T1["/templates/<name> 模板加载"]:::apiLayer
+        T2["/view_detail/<record_id> 检测详情页"]:::apiLayer
+    end
+    class TEMPLATE title
+
+    %% ===== 静态文件/资源 =====
+    subgraph STATIC title
+        direction LR
+        S1["/uploads/<file> 用户上传文件"]:::staticLayer
+        S2["/static/<file> 前端资源"]:::staticLayer
+        S3["/detections/<file> 检测结果文件"]:::staticLayer
+        S4["/dehaze_results/<file> 去雾结果文件"]:::staticLayer
+        S5["/results/<file> 可视化结果"]:::staticLayer
+    end
+    class STATIC title
+
+    %% ===== 数据流整理 =====
+    P4 -->|文件上传| A1
+    P5 -->|设备控制| A5
+    P9 -->|天气检测| A2 & A4
+    P9 -->|预警状态| A6 & A7 & A8
+    P1 -->|数据获取| A2 & A14 & A18
+    P3 -->|数据统计| A2 & A18
+    P6 -->|查看详情| A18 --> T2 -->|加载结果| S3
+    P8 -->|数据提交| A17
+    P12 -->|用户信息| A13
+    A1 -->|存储结果| S3 & S5
+    A3 & A4 -->|天气数据| A6
+
+    %% 静态加载关系
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 -->|加载资源| S2
+    P4 -->|上传文件访问| S1
+    P5 -->|加载视频流| S2
+    A3 -->|结果文件| S4
+
+    %% 登录与注册交互
+    B -->|验证登录| A9 -->|验证码| A11
+    A10 -->|注册| B
+    A12 -->|登出| B
+    A13 -->|返回用户信息| P12
+    A15 -->|同步数据| P10
+    A16 -->|环境分析| P4
+    A17 -->|数据回传| P8
+    A18 -->|历史记录| P6
+```
+
