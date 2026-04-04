@@ -128,3 +128,70 @@ body {
     visibility: hidden;
     pointer-events: none; /* 隐藏后不遮挡点击 */
 }
+.alert-item {
+  position: fixed;
+  top: 72px;
+  right: 32px;
+  background: #1e293b;
+  border-left: 4px solid #06b6d4;
+  color: #f1f5f9;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6 -1 rgba(0, 0, 0, 0.1), 0 2px 4 -1 rgba(0, 0, 0, 0.06);
+  z-index: 9999;
+  width: 320px;
+  transition: all 0.3s ease;
+}
+.alert-item.success { border-left-color: #22c55e; }
+.alert-item.warning { border-left-color: #eab308; }
+.alert-item.error { border-left-color: #ef4444; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.whitespace-nowrap { white-space: nowrap; }
+.flex-shrink-0 { flex-shrink: 0; }
+#sampleDropArea.dragover {
+  border-color: #22d3ee;
+  background-color: rgba(34, 211, 238, 0.05);
+}
+#previewContainer { transition: all 0.3s ease; }
+
+/* 视频控制栏样式 */
+#videoControlBar {
+  transition: all 0.3s ease;
+}
+#videoControlBar button {
+  transition: all 0.2s ease;
+}
+#frameIntervalInput::-webkit-outer-spin-button,
+#frameIntervalInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#frameIntervalInput {
+  -moz-appearance: textfield;
+}
+
+/* 摄像头模块样式 */
+#cameraPreviewContainer {
+  transition: all 0.3s ease;
+  min-height: 500px;
+}
+#cameraVideo {
+  transform: scaleX(-1); /* 镜像显示，更符合自拍习惯 */
+  background: #000;
+}
+#cameraCanvas {
+  transform: scaleX(-1); /* 与视频同步镜像 */
+  pointer-events: none;
+}
+#cameraControlBar button {
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+/* 实时统计面板样式 */
+.stats-panel {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+}

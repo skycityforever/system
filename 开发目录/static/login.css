@@ -42,20 +42,6 @@ body {
     color: #fff;
 }
 
-<!--        /* 按钮 */-->
-<!--        .btn-primary {-->
-<!--            background: linear-gradient(90deg, #0ea5e9, #22d3ee);-->
-<!--            border: none;-->
-<!--            border-radius: 8px;-->
-<!--            padding: 12px;-->
-<!--            font-weight: 600;-->
-<!--            transition: all 0.3s;-->
-<!--        }-->
-<!--        .btn-primary:hover {-->
-<!--            transform: translateY(-2px);-->
-<!--            box-shadow: 0 5px 15px rgba(34, 211, 238, 0.3);-->
-<!--        }-->
-
 /* 按钮 */
 .btn-primary {
     /* 替换成深色背景 + 青蓝色边框/文字（匹配参考样式） */
@@ -111,4 +97,4 @@ a:hover {
     margin-top: 5px;
     display: none; /* 默认隐藏 */
 }
-21
+
