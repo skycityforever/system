@@ -1,0 +1,15 @@
+.glass-panel {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+body {
+    background-color: #020617;
+    color: #e2e8f0;
+}
+.profile-ring {
+    padding: 4px;
+    border: 2px solid #22d3ee;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+

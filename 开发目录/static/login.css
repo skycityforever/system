@@ -102,3 +102,13 @@ a:hover {
 /* 表单切换样式（新增） */
 .form-box { display: none; }
 .form-box.active { display: block; }
+
+
+ /* 错误提示文字样式 */
+.login-error {
+    color: #dc3545; /* 红色 */
+    font-size: 14px;
+    margin-top: 5px;
+    display: none; /* 默认隐藏 */
+}
+21

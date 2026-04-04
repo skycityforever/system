@@ -1,0 +1,15 @@
+/* 重置样式 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* 粒子Canvas样式（作为背景） */
+#particleCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background-color: #020617;
+    display: block;
+}
+

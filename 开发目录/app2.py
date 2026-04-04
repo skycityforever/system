@@ -1,4 +1,6 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from datetime import datetime, timedelta
+import random
+from flask import Flask, request, jsonify, send_from_directory, render_template, session, redirect, url_for
 import os
 import sys
 import uuid
@@ -9,6 +11,7 @@ import numpy as np
 import onnxruntime
 import psutil
 import json
+import string  # 新增：用于生成验证码字符
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from detection.YOLOV11 import yolov11_detect
@@ -42,7 +45,8 @@ try:
         import_detection_records,
         import_devices,
         import_models,
-        import_users
+        import_users,
+        import_login_logs
     )
     DB_ENABLED = True
     print("✅ 数据库模块加载成功 → 自动同步 JSON → SQLite")
@@ -62,8 +66,16 @@ app = Flask(__name__,
             static_folder='static',
             template_folder='templates'
             )
-CORS(app)
 
+# ==========================
+# 核心安全配置（新增）
+# ==========================
+# 1. 设置Session密钥（必须，建议生产环境用随机生成的密钥）
+app.secret_key = os.urandom(24)  # 随机生成24位密钥
+# 2. 设置Session有效期（2天）
+app.permanent_session_lifetime = timedelta(days=2)
+# 3. 配置CORS允许携带Cookie
+CORS(app, supports_credentials=True)
 app.register_blueprint(device_transport_bp)
 app.register_blueprint(model_transport_bp)
 app.register_blueprint(dashboard_bp)
@@ -87,6 +99,225 @@ llm_analyzer = DoubaoEnvironmentAnalyzer(
     api_key="mk-7925AE7CBDE52565CD3535FECAAC9172"
 )
 
+# ==========================
+# 登录验证装饰器（核心安全功能，新增）
+# ==========================
+def login_required(f):
+    """登录验证装饰器：未登录用户重定向到登录页"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 检查Session中是否有登录标识
+        if 'username' not in session:
+            # 验证码接口无需登录
+            if request.path.startswith('/api/') and not request.path.startswith(
+                    '/api/verify-login') and not request.path.startswith(
+                    '/api/register') and not request.path.startswith('/api/generate-code'):
+                return jsonify({"success": False, "msg": "请先登录！", "need_login": True}), 401
+            else:
+                return redirect(url_for('index'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+# ==========================
+# 验证码生成接口（新增核心）
+# ==========================
+@app.route('/api/generate-code', methods=['GET'])
+def generate_code():
+    """生成4位验证码并存储到Session（供前端验证）"""
+    try:
+        # 生成4位大小写字母+数字的验证码
+        char_set = string.ascii_uppercase + string.digits  # 只保留大写+数字，降低复杂度
+        code = ''.join(random.choices(char_set, k=4))
+        session['verify_code'] = code  # 存储到Session，用于后续验证
+        return jsonify({
+            'success': True,
+            'code': code  # 前端可基于此生成验证码图片（也可后端返回Base64图片）
+        })
+    except Exception as e:
+        print(f"生成验证码失败：{e}")
+        return jsonify({'success': False, 'msg': '生成验证码失败'})
+
+
+# ==========================
+# 登录/登出接口（整合验证码验证）
+# ==========================
+# 登录验证接口（唯一版本，整合验证码逻辑）
+@app.route('/api/verify-login', methods=['POST'])
+def verify_login():
+    try:
+        # 获取前端提交的所有参数
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        verify_code = data.get('verifyCode')  # 新增：接收前端传入的验证码
+
+        # 1. 先验证验证码（必填）
+        if not verify_code:
+            return jsonify({'success': False, 'msg': '请输入验证码'})
+
+        # 从Session获取生成的验证码，对比（不区分大小写）
+        session_code = session.get('verify_code')
+        if not session_code or verify_code.upper() != session_code.upper():
+            return jsonify({'success': False, 'msg': '验证码错误'})
+
+        # 2. 验证账号密码
+        log_dir = os.path.join(os.path.dirname(__file__), 'log')
+        os.makedirs(log_dir, exist_ok=True)  # 自动创建log文件夹
+        users_path = os.path.join(log_dir, 'users.json')
+        with open(users_path, 'r', encoding='utf-8') as f:
+            users = json.load(f)
+
+        # 遍历验证账号密码
+        for user in users:
+            if user.get('username') == username and user.get('password') == password:
+                # 登录成功：设置Session
+                session.permanent = True  # 启用永久Session（2天有效期）
+                session['username'] = username  # 存储用户名到Session
+                session['login_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                session.pop('verify_code', None)  # 验证码使用后销毁，防止重复使用
+
+                # ========== 新增：写入登录日志 ==========
+                log_dir = os.path.join(os.path.dirname(__file__), 'log')
+                os.makedirs(log_dir, exist_ok=True)
+                login_log_path = os.path.join(log_dir, 'login_log.json')
+
+                # 构造日志数据
+                login_log = {
+                    "username": username,
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ip": request.remote_addr,  # 获取客户端IP
+                    "location": "未知位置",  # 简单版：固定值，进阶版可对接IP解析接口
+                    "type": "正常登录"
+                }
+
+                # 读取原有日志，追加新日志
+                if os.path.exists(login_log_path):
+                    with open(login_log_path, 'r', encoding='utf-8') as f:
+                        try:
+                            logs = json.load(f)
+                        except json.JSONDecodeError:
+                            logs = []
+                else:
+                    logs = []
+
+                logs.append(login_log)
+                # 只保留最近10条日志（可选，避免文件过大）
+                logs = logs[-10:]
+
+                # 写入文件
+                with open(login_log_path, 'w', encoding='utf-8') as f:
+                    json.dump(logs, f, ensure_ascii=False, indent=4)
+
+                return jsonify({'success': True, 'msg': '登录成功'})
+
+        # 账号密码不匹配
+        return jsonify({'success': False, 'msg': '账号或密码错误'})
+
+    except Exception as e:
+        print(f'登录验证失败：{e}')
+        return jsonify({'success': False, 'msg': '登录失败，请重试'})
+
+
+
+# 登出接口（新增）
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    # 清除所有Session（包括登录状态和验证码）
+    session.clear()
+    return jsonify({'success': True, 'msg': '登出成功'})
+
+
+# ==========================
+# 注册接口（保留）
+# ==========================
+@app.route('/api/register', methods=['POST'])
+def user_register():
+    try:
+        # 获取前端提交的注册数据
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        inviteCode = data.get('inviteCode')
+
+        # 校验必填字段
+        if not username or not password or not inviteCode:
+            return jsonify({'code': 400, 'msg': '账号、密码、邀请码不能为空'})
+
+        # ====================== 邀请码验证（新增）======================
+        INVITE_CODE_CORRECT = "POLAR_GUARD_SUCESS"
+        invite_status = False  # 默认无权限
+
+        if inviteCode is not None and inviteCode.strip() != "":
+            # 有输入邀请码 → 校验
+            if inviteCode.strip() != INVITE_CODE_CORRECT:
+                return jsonify({'code': 400, 'msg': '邀请码输入错误'})
+            else:
+                invite_status = True
+        # ==============================================================
+
+        # 定义users.json路径（确保log文件夹存在）
+        log_dir = os.path.join(os.path.dirname(__file__), 'log')
+        os.makedirs(log_dir, exist_ok=True)  # 自动创建log文件夹
+        users_path = os.path.join(log_dir, 'users.json')
+
+        # 读取现有用户数据（如果文件不存在则初始化空列表）
+        if os.path.exists(users_path):
+            with open(users_path, 'r', encoding='utf-8') as f:
+                try:
+                    users = json.load(f)
+                except json.JSONDecodeError:  # 文件为空或格式错误时初始化
+                    users = []
+        else:
+            users = []
+
+        # 检查账号是否已存在
+        for user in users:
+            if user.get('username') == username:
+                return jsonify({'code': 409, 'msg': '该账号已被注册'})
+
+        # 构造新用户数据（补充预留字段）
+        new_user = {
+            "username": username,
+            "password": password,
+            "inviteCode": invite_status,  # 存入 true/false
+            "phone": "",
+            "name": "",
+            "jobNo": "",
+            "notifyEmail": "",
+            "create_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "nickname": "未命名",
+            "realName": "未命名",
+            "userId": "未分配",
+            "jobNumber": "未分配",
+            "role": "普通用户",
+            "auth": "基础权限",
+            "bioVerify": "未录入",
+            "avatar": "https://modao.cc/agent-py/media/generated_images/2026-03-18/3fc0139ebe274f268819b87bcbb7263f.jpg",
+            "score": "0.0"
+        }
+
+        # 写入新用户到JSON文件
+        users.append(new_user)
+        with open(users_path, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=4)  # indent=4 格式化显示
+
+        # 如果启用了数据库，同步到SQLite
+        if DB_ENABLED:
+            try:
+                import_users()  # 调用已有的导入函数同步到数据库
+                print(f"🟢 [DB] 新用户 {username} 已同步到数据库")
+            except Exception as e:
+                print(f"🔴 [DB] 用户同步失败：{e}")
+
+        # 返回成功响应
+        return jsonify({'code': 200, 'msg': '注册成功'})
+
+    except Exception as e:
+        print(f'注册失败：{e}')
+        return jsonify({'code': 500, 'msg': f'服务器错误：{str(e)}'})
 # ==========================
 # 全局模型状态
 # ==========================
@@ -128,56 +359,274 @@ c2pnet = C2PNet(C2PNET_ONNX_PATH)
 age_gender_detector = AgeGenderDetector()
 
 # ==========================
-# 页面路由
+# 页面路由（添加登录验证装饰器）
 # ==========================
 @app.route('/')
 def index():
+    # 如果已登录，直接跳转到导航页
+    if 'username' in session:
+        return redirect(url_for('navgation'))
+    return render_template('login.html')
+
+@app.route('/navgation')
+@login_required  # 需登录才能访问
+def navgation():
     return render_template('navgation.html')
 
 @app.route('/object_detection_controlcenter')
+@login_required  # 需登录才能访问
 def object_detection_controlcenter():
     return render_template('object_detection_controlcenter.html')
 
+
 @app.route('/visual_dashboard')
+@login_required  # 需登录才能访问
 def visual_dashboard():
     return render_template('visual_dashboard.html')
 
+
 @app.route('/history')
+@login_required  # 需登录才能访问
 def history():
     return render_template('history.html')
 
+
 @app.route('/historical_data_analysis')
+@login_required  # 需登录才能访问
 def historical_data_analysis():
     return render_template('historical_data_analysis.html')
 
+
 @app.route('/model_management')
+@login_required  # 需登录才能访问
 def model_management():
     return render_template('model_management.html')
 
+
 @app.route('/edge_device_management')
+@login_required  # 需登录才能访问
 def edge_device_management():
     return render_template('edge_device_management.html')
 
+
 @app.route('/user_center')
+@login_required  # 需登录才能访问
 def user_center():
     return render_template('user_center.html')
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
-
 @app.route('/register')
 def register():
+    # 注册页无需登录，但已登录用户跳转到导航页
+    if 'username' in session:
+        return redirect(url_for('navgation'))
     return render_template('register.html')
+
 # 数据采集页面
 @app.route('/data_collection')
+@login_required  # 需登录才能访问
 def data_collection():
     return render_template('data_collection.html')
+
+# ==========================
+# 获取当前登录用户信息接口（新增）
+# ==========================
+@app.route('/api/current-user', methods=['GET'])
+@login_required
+def get_current_user():
+    try:
+        username = session.get('username')
+        if not username:
+            return jsonify({"success": False, "msg": "未获取到登录信息"}), 401
+
+        log_dir = os.path.join(os.path.dirname(__file__), 'log')
+        os.makedirs(log_dir, exist_ok=True)  # 自动创建log文件夹
+        users_path = os.path.join(log_dir, 'users.json')
+        with open(users_path, 'r', encoding='utf-8') as f:
+            users = json.load(f)
+
+        current_user = None
+        for user in users:
+            if user.get('username') == username:
+                current_user = user
+                break
+
+        if not current_user:
+            return jsonify({"success": False, "msg": "用户信息不存在"}), 404
+
+        # ====================== 根据 inviteCode 判断角色 ======================
+        invite_status = current_user.get('inviteCode', False)
+        role_name = "管理员" if invite_status is True else "普通用户"
+        auth_name = "核心权限" if invite_status is True else "基础权限"
+        # ====================================================================
+
+        user_info = {
+            "username": current_user.get('username', '未命名'),
+            "nickname": current_user.get('nickname', '未命名'),
+            "realName": current_user.get('realName', '未命名'),
+            "userId": current_user.get('userId', '未分配'),
+            "jobNumber": current_user.get('jobNumber', '未分配'),
+            "role": role_name,  # 动态判断
+            "auth": auth_name,
+            "phone": current_user.get('phone', '未绑定'),
+            "email": current_user.get('notifyEmail') or current_user.get('email', '未绑定'),
+            "bioVerify": current_user.get('bioVerify', '未录入'),
+            "avatar": current_user.get('avatar', 'https://modao.cc/agent-py/media/generated_images/2026-03-18/3fc0139ebe274f268819b87bcbb7263f.jpg'),
+            "score": current_user.get('score', '0.0')
+        }
+        return jsonify({"success": True, "data": user_info})
+    except Exception as e:
+        print(f"获取用户信息失败：{e}")
+        return jsonify({"success": False, "msg": f"获取用户信息失败：{str(e)}"}), 500
+
+# ==========================
+# 读取登录日志接口（新增）
+# ==========================
+@app.route('/api/login-logs', methods=['GET'])
+@login_required
+def get_login_logs():
+    """获取当前用户的登录日志"""
+    try:
+        username = session.get('username')
+        if not username:
+            return jsonify({"success": False, "msg": "未登录"}), 401
+
+        # 读取登录日志文件
+        login_log_path = os.path.join(os.path.dirname(__file__), 'log', 'login_log.json')
+        if os.path.exists(login_log_path):
+            with open(login_log_path, 'r', encoding='utf-8') as f:
+                try:
+                    all_logs = json.load(f)
+                except json.JSONDecodeError:
+                    all_logs = []
+        else:
+            all_logs = []
+
+        # 筛选当前用户的日志
+        user_logs = [log for log in all_logs if log.get('username') == username]
+        # 按时间倒序排列
+        user_logs.sort(key=lambda x: x['time'], reverse=True)
+
+        return jsonify({"success": True, "data": user_logs})
+
+    except Exception as e:
+        print(f"读取登录日志失败：{e}")
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+# ==========================
+# 更新用户信息接口（新增）
+# ==========================
+@app.route('/api/update-user', methods=['POST'])
+@login_required
+def update_user():
+    try:
+        username = session.get('username')
+        if not username:
+            return jsonify({"success": False, "msg": "未登录"}), 401
+
+        # 获取前端传来的数据
+        data = request.get_json()
+        realName = data.get('realName', '')
+        phone = data.get('phone', '')
+        email = data.get('email', '')
+        nickname = data.get('nickname', '')
+
+        # 读取JSON
+        log_dir = os.path.join(os.path.dirname(__file__), 'log')
+        os.makedirs(log_dir, exist_ok=True)  # 自动创建log文件夹
+        users_path = os.path.join(log_dir, 'users.json')
+        with open(users_path, 'r', encoding='utf-8') as f:
+            users = json.load(f)
+
+        # 找到当前用户并更新
+        updated = False
+        for user in users:
+            if user.get('username') == username:
+                user['realName'] = realName
+                user['phone'] = phone
+                user['email'] = email
+                user['nickname'] = nickname
+                updated = True
+                break
+
+        if not updated:
+            return jsonify({"success": False, "msg": "用户不存在"}), 404
+
+        # 写回文件
+        with open(users_path, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+        return jsonify({"success": True, "msg": "保存成功"})
+
+    except Exception as e:
+        print("保存错误:", e)
+        return jsonify({"success": False, "msg": "保存失败：" + str(e)}), 500
+
+# ==========================
+# 修改密码接口（新增）
+# ==========================
+@app.route('/api/update-password', methods=['POST'])
+@login_required
+def update_password():
+    try:
+        username = session.get('username')
+        if not username:
+            return jsonify({"success": False, "msg": "未登录"}), 401
+
+        data = request.get_json()
+        old_pwd = data.get('oldPassword')
+        new_pwd = data.get('newPassword')
+        confirm_pwd = data.get('confirmPassword')
+
+        # 前端校验
+        if not old_pwd or not new_pwd or not confirm_pwd:
+            return jsonify({"success": False, "msg": "请填写完整"})
+        if new_pwd != confirm_pwd:
+            return jsonify({"success": False, "msg": "两次密码不一致"})
+        if len(new_pwd) < 6:
+            return jsonify({"success": False, "msg": "密码长度至少6位"})
+
+        # 读取用户文件
+        users_path = os.path.join('log', 'users.json')
+        with open(users_path, 'r', encoding='utf-8') as f:
+            users = json.load(f)
+
+        # 找到用户并校验旧密码
+        user_found = None
+        for user in users:
+            if user.get('username') == username:
+                user_found = user
+                break
+
+        if not user_found:
+            return jsonify({"success": False, "msg": "用户不存在"})
+        if user_found.get('password') != old_pwd:
+            return jsonify({"success": False, "msg": "原密码错误"})
+
+        # 更新密码
+        user_found['password'] = new_pwd
+
+        # 写回文件
+        with open(users_path, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+        # 同步数据库（如果开启）
+        if DB_ENABLED:
+            try:
+                import_users()
+            except:
+                pass
+
+        return jsonify({"success": True, "msg": "密码修改成功，请重新登录"})
+
+    except Exception as e:
+        print("修改密码错误:", e)
+        return jsonify({"success": False, "msg": "修改失败：" + str(e)}), 500
 
 # ==========================
 # 模型切换接口（新增age_recognition映射）
 # ==========================
 @app.route('/api/set_current_model', methods=['POST'])
+@login_required
 def set_current_model():
     global current_deployed_model
     try:
@@ -203,6 +652,7 @@ def set_current_model():
         return jsonify({"success": False, "msg": str(e)}), 500
 
 @app.route('/api/get_current_model', methods=['GET'])
+@login_required
 def get_current_model():
     return jsonify({
         "success": True,
@@ -213,6 +663,7 @@ def get_current_model():
 # ✅ 实时设备状态接口（GPU + 内存）
 # ==========================
 @app.route('/api/device_status', methods=['GET'])
+@login_required
 def device_status():
     try:
         gpu_used = 0
@@ -247,6 +698,7 @@ def device_status():
 # 统一检测接口 + 自动同步数据库（新增年龄检测分支）
 # ==========================
 @app.route('/api/detect', methods=['POST'])
+@login_required
 def detect_image_api():
     try:
         file = request.files['image']
@@ -492,6 +944,7 @@ def detect_image_api():
 # 环境分析
 # ==========================
 @app.route('/api/analyze_environment', methods=['POST'])
+@login_required
 def analyze_environment():
     try:
         data = request.json
@@ -512,6 +965,7 @@ def analyze_environment():
 # 检测记录
 # ==========================
 @app.route('/api/detection_records', methods=['GET'])
+@login_required
 def get_detection_records_api():
     try:
         records = get_all_detection_records()
@@ -523,6 +977,7 @@ def get_detection_records_api():
 # ✅ 前端修改 JSON → 自动全量同步到数据库
 # ==========================
 @app.route('/api/sync_json_to_db', methods=['POST'])
+@login_required
 def sync_json_to_db():
     if not DB_ENABLED:
         return jsonify({"success": False, "msg": "数据库未连接"})
@@ -567,12 +1022,14 @@ if DB_ENABLED:
         import_devices()
         import_models()
         import_users()
+        import_login_logs()
         print("✅ 数据库初始化完成\n")
     except Exception as e:
         print(f"⚠️ 同步失败：{e}\n")
 
 # 数据采集提交接口
 @app.route('/api/data_collection', methods=['POST'])
+@login_required
 def api_data_collection():
     try:
         data = request.get_json()
@@ -589,6 +1046,7 @@ def api_data_collection():
 
 # 数据采集记录查询接口（供前端展示）
 @app.route('/api/data_collection/records')
+@login_required
 def api_data_collection_records():
     scene = request.args.get("scene", "")
     if scene:

@@ -1,10 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极境守护注册系统</title>
+    <link rel="stylesheet" href="../static/login_register_particle.css">
+    <link rel="stylesheet" href="../static/register.css">
+    <!-- 引入jQuery -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </head>
 <body>
+    <!-- 星空背景画布（和登录页一致，保留不动） -->
+    <canvas id="particleCanvas"></canvas>
 
+    <!-- 居中表单容器（和登录页布局完全一致） -->
+    <div class="login-box">
+        <h2>极境守护注册系统</h2>
+        <form id="registerForm">
+            <!-- 账号：纯数字 8-16位 -->
+            <div class="form-item">
+                <label for="username">账号</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="text" id="username" name="username" placeholder="请输入账号" autocomplete="off">
+                    <span class="input-tip">(纯数字，8~16位)</span>
+                </div>
+                <div class="tip" id="usernameTip"></div>
+            </div>
+
+            <!-- 密码：数字+字母 8-20位 -->
+            <div class="form-item">
+                <label for="password">密码</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="password" id="password" name="password" placeholder="请输入密码" autocomplete="off">
+                    <span class="input-tip">(数字+字母，8~20位)</span>
+                </div>
+                <div class="tip" id="passwordTip"></div>
+            </div>
+
+            <!-- 确认密码 -->
+            <div class="form-item">
+                <label for="repassword">确认密码</label>
+                <input type="password" id="repassword" name="repassword" placeholder="请再次输入密码" autocomplete="off">
+                <div class="tip" id="repasswordTip"></div>
+            </div>
+
+            <!-- 邀请码 -->
+            <div class="form-item">
+                <label for="inviteCode">邀请码</label>
+                <input type="text" id="inviteCode" name="inviteCode" placeholder="请输入邀请码" autocomplete="off">
+                <div class="tip" id="inviteCodeTip"></div>
+            </div>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button type="submit" class="btn btn-primary w-100">完成注册</button>
+            </div>
+            <!-- 登录跳转链接 -->
+            <div class="login-link">
+                已有账号？<a href="/">立即登录</a>
+            </div>
+        </form>
+    </div>
+    <script src="../static/register.js"></script>
+    <script src="../static/login_register_particle.js"></script>
 </body>
 </html>

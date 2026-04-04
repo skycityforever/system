@@ -21,7 +21,7 @@ def get_db_connection():
     return conn
 
 # ==========================
-# 2. 建表 SQL（全部 6 张表）
+# 2. 建表 SQL（全部 6 张表，已优化登录日志表）
 # ==========================
 def create_all_tables():
     conn = get_db_connection()
@@ -87,15 +87,16 @@ def create_all_tables():
     )
     ''')
 
-    # 表5：用户登录日志（新增）
+    # 表5：用户登录日志（适配 login_log.json 结构）
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS user_login_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
+        time TEXT,
+        ip TEXT,
+        location TEXT,
+        type TEXT,
         login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        ip_address TEXT,
-        device_info TEXT,
-        status TEXT,  -- success/failed
         FOREIGN KEY (username) REFERENCES users(username)
     )
     ''')
@@ -117,10 +118,10 @@ def create_all_tables():
 
     conn.commit()
     conn.close()
-    print("✅ 6 张核心数据表已创建完成")
+    print("✅ 6 张核心数据表已创建完成（含登录日志表）")
 
 # ==========================
-# 3. JSON 数据导入函数
+# 3. JSON 数据导入函数（新增 login_log.json）
 # ==========================
 def import_detection_records():
     """导入 detection_records.json"""
@@ -250,7 +251,36 @@ def import_users():
     print(f"✅ 导入 {len(data)} 条用户数据")
 
 # ==========================
-# 4. 核心 CRUD 接口（给 Flask 调用）
+# 新增：导入 login_log.json
+# ==========================
+def import_login_logs():
+    """导入 login_log.json（适配你截图中的JSON结构）"""
+    path = os.path.join(LOG_DIR, "login_log.json")
+    if not os.path.exists(path):
+        print("⚠️ login_log.json 不存在")
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    for item in data:
+        cursor.execute('''
+        INSERT OR REPLACE INTO user_login_logs
+        (username, time, ip, location, type)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (
+            item.get("username"),
+            item.get("time"),
+            item.get("ip"),
+            item.get("location"),
+            item.get("type")
+        ))
+    conn.commit()
+    conn.close()
+    print(f"✅ 导入 {len(data)} 条登录日志")
+
+# ==========================
+# 4. 核心 CRUD 接口（给 Flask 调用，新增登录日志相关）
 # ==========================
 
 # --- 检测记录 ---
@@ -289,16 +319,70 @@ def update_model_status(model_name, status, load_time):
 def record_user_login(username, ip, device_info, status):
     conn = get_db_connection()
     cursor = conn.cursor()
+    # 兼容两种格式：JSON格式和直接参数格式
     cursor.execute('''
     INSERT INTO user_login_logs
-    (username, ip_address, device_info, status)
-    VALUES (?, ?, ?, ?)
-    ''', (username, ip, device_info, status))
+    (username, ip, location, type, time)
+    VALUES (?, ?, ?, ?, ?)
+    ''', (
+        username,
+        ip,
+        "未知位置",  # 默认值，可根据需求扩展
+        status,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+    conn.close()
+
+# --- 新增：获取登录日志列表（给前端接口用）---
+def get_login_logs(limit=50, username=None):
+    """
+    获取登录日志，支持按用户名筛选
+    :param limit: 返回条数，默认50
+    :param username: 用户名，可选，用于筛选
+    :return: 日志列表（字典格式）
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if username:
+        cursor.execute('''
+        SELECT * FROM user_login_logs 
+        WHERE username = ? 
+        ORDER BY login_time DESC 
+        LIMIT ?
+        ''', (username, limit))
+    else:
+        cursor.execute('''
+        SELECT * FROM user_login_logs 
+        ORDER BY login_time DESC 
+        LIMIT ?
+        ''', (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+# --- 新增：删除登录日志 ---
+def delete_login_log(log_id):
+    """删除单条登录日志"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    DELETE FROM user_login_logs WHERE id = ?
+    ''', (log_id,))
+    conn.commit()
+    conn.close()
+
+# --- 新增：清空所有登录日志 ---
+def clear_all_login_logs():
+    """清空全部登录日志（谨慎使用）"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM user_login_logs')
     conn.commit()
     conn.close()
 
 # ==========================
-# 5. 初始化入口
+# 5. 初始化入口（新增 login_log 导入）
 # ==========================
 if __name__ == "__main__":
     create_all_tables()
@@ -306,4 +390,5 @@ if __name__ == "__main__":
     import_devices()
     import_models()
     import_users()
-    print("🎉 数据库初始化完成！所有 JSON 已导入 SQLite")
+    import_login_logs()  # 新增：导入登录日志
+    print("🎉 数据库初始化完成！所有 JSON（含 login_log.json）已导入 SQLite")
