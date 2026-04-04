@@ -33,6 +33,10 @@ from data_transport.data_collection_transport import (
 )
 from flask_cors import CORS
 from llm_integration.llm_client import DoubaoEnvironmentAnalyzer
+# 天气自适应
+from weather_detection.weather_adaptation import WeatherAdaptationPipeline, WeatherCondition, ProcessedFrame
+# 高级多模态检测
+from weather_detection.advanced_detection import AdvancedDetectionService, DetectionConfig, DetectionResult
 
 # ==========================
 # 数据库自动集成（已内置）
@@ -69,12 +73,21 @@ app = Flask(__name__,
 # ==========================
 # 核心安全配置（新增）
 # ==========================
-# 1. 设置Session密钥（必须，建议生产环境用随机生成的密钥）
 app.secret_key = os.urandom(24)  # 随机生成24位密钥
-# 2. 设置Session有效期（2天）
 app.permanent_session_lifetime = timedelta(days=2)
-# 3. 配置CORS允许携带Cookie
 CORS(app, supports_credentials=True)
+# 注册预警系统蓝图
+try:
+    from alert_system.api_routes import alert_bp
+    from alert_system.alert_system import ExtremeWeatherAlertSystem
+    ALERT_SYSTEM_ENABLED = True
+    print("✅ 极端天气预警系统加载成功")
+except Exception as e:
+    ALERT_SYSTEM_ENABLED = False
+    print(f"⚠️ 预警系统未启用：{str(e)}")
+if ALERT_SYSTEM_ENABLED:
+    app.register_blueprint(alert_bp)
+    alert_system = ExtremeWeatherAlertSystem()
 app.register_blueprint(device_transport_bp)
 app.register_blueprint(model_transport_bp)
 app.register_blueprint(dashboard_bp)
@@ -97,6 +110,20 @@ llm_analyzer = DoubaoEnvironmentAnalyzer(
     api_url="https://metaso.cn/api/v1/chat/completions",
     api_key="mk-7925AE7CBDE52565CD3535FECAAC9172"
 )
+# 天气自适应流水线（全局单例，只加载一次）
+weather_pipeline = WeatherAdaptationPipeline()
+# 记录上一次天气，用于时间连续性平滑
+last_weather = None
+
+# 多模态检测服务
+detection_config = DetectionConfig(
+    confidence_threshold=0.5,
+    nms_threshold=0.4,
+    use_fp16=False,
+    enable_tensorrt=False
+)
+detection_service = AdvancedDetectionService(detection_config)
+
 
 # ==========================
 # 登录验证装饰器（核心安全功能，新增）
@@ -425,6 +452,11 @@ def register():
 @login_required  # 需登录才能访问
 def data_collection():
     return render_template('data_collection.html')
+
+@app.route('/weather_alert')
+@login_required
+def weather_alert_page():
+    return render_template('weather_alert.html')
 
 # ==========================
 # 获取当前登录用户信息接口（新增）
@@ -1107,5 +1139,177 @@ def api_data_collection_records():
         data = get_all_collection_data()
     return jsonify({"success": True, "records": data})
 
+# ==================== 核心：天气 → 预警等级映射 ====================
+def weather_to_alert_level(weather: WeatherCondition) -> tuple:
+    mapping = {
+        WeatherCondition.CLEAR: ("一级（蓝色）", "标准检测参数", "正常监控，记录日志"),
+        WeatherCondition.RAIN: ("二级（黄色）", "降低置信度阈值", "增加检测频率，人工复核"),
+        WeatherCondition.SNOW: ("二级（黄色）", "降低置信度阈值", "增加检测频率，人工复核"),
+        WeatherCondition.FOG: ("三级（橙色）", "启用天气特定模型", "启动多模态融合，加强监控"),
+        WeatherCondition.DUST: ("三级（橙色）", "启用天气特定模型", "启动多模态融合，加强监控"),
+        WeatherCondition.EXTREME: ("五级（黑色）", "应急检测模式", "启动应急预案，人工干预")
+    }
+    return mapping.get(weather, mapping[WeatherCondition.CLEAR])
+
+# ==================== 【关键修改】支持图片/视频/摄像头输入的天气检测接口 ====================
+# 1. 上传图片检测天气
+@app.route('/api/weather/detect', methods=['POST'])
+@login_required
+def api_weather_detect():
+    global last_weather
+    try:
+        # 接收上传的图片
+        file = request.files['image']
+        # 读取图片为numpy数组
+        file_bytes = np.frombuffer(file.read(), np.uint8)
+        frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+        # 执行天气自适应处理（传入真实图片帧 + 上一次天气做平滑）
+        processed: ProcessedFrame = weather_pipeline.process_frame(
+            frame=frame,
+            sensor_metadata={},
+            prev_weather=last_weather
+        )
+        # 更新上一次天气
+        last_weather = processed.weather
+
+        # 映射预警等级
+        level, strategy, action = weather_to_alert_level(processed.weather)
+
+        return jsonify({
+            "success": True,
+            "weather": processed.weather.value,
+            "model": processed.model_name,
+            "params": processed.detection_params,
+            "alert_level": level,
+            "detection_strategy": strategy,
+            "response_action": action
+        })
+    except Exception as e:
+        print(f"天气检测失败：{e}")
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+# 2. 视频流/摄像头实时帧检测（供前端WebSocket/轮询调用）
+@app.route('/api/weather/stream', methods=['POST'])
+@login_required
+def api_weather_stream():
+    global last_weather
+    try:
+        # 接收前端传来的Base64编码的视频帧（摄像头实时画面）
+        data = request.get_json()
+        frame_base64 = data.get('frame')
+        if not frame_base64:
+            return jsonify({"success": False, "msg": "缺少视频帧数据"}), 400
+
+        # Base64转numpy数组
+        import base64
+        frame_bytes = base64.b64decode(frame_base64)
+        frame = cv2.imdecode(np.frombuffer(frame_bytes, np.uint8), cv2.IMREAD_COLOR)
+
+        # 执行天气自适应处理
+        processed: ProcessedFrame = weather_pipeline.process_frame(
+            frame=frame,
+            sensor_metadata={},
+            prev_weather=last_weather
+        )
+        last_weather = processed.weather
+
+        # 映射预警等级
+        level, strategy, action = weather_to_alert_level(processed.weather)
+
+        return jsonify({
+            "success": True,
+            "weather": processed.weather.value,
+            "alert_level": level,
+            "detection_strategy": strategy,
+            "response_action": action
+        })
+    except Exception as e:
+        print(f"视频流天气检测失败：{e}")
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+# 3. 保留原有的GET接口（用于前端轮询，无输入时用模拟帧，有输入时自动用真实帧）
+@app.route('/api/weather/status', methods=['GET'])
+@login_required
+def api_weather_status():
+    global last_weather
+    # 如果有上一次真实天气，直接返回；否则用模拟帧
+    if last_weather is not None:
+        level, strategy, action = weather_to_alert_level(last_weather)
+        return jsonify({
+            "success": True,
+            "weather": last_weather.value,
+            "alert_level": level,
+            "detection_strategy": strategy,
+            "response_action": action
+        })
+    # 模拟一帧图像（兜底）
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    processed: ProcessedFrame = weather_pipeline.process_frame(
+        frame=dummy_frame,
+        sensor_metadata={},
+        prev_weather=last_weather
+    )
+    last_weather = processed.weather
+    level, strategy, action = weather_to_alert_level(processed.weather)
+    return jsonify({
+        "success": True,
+        "weather": processed.weather.value,
+        "model": processed.model_name,
+        "params": processed.detection_params,
+        "alert_level": level,
+        "detection_strategy": strategy,
+        "response_action": action
+    })
+
+# ==================== API：预警状态（给 weather_alert.html 使用，兼容原前端） ====================
+@app.route('/api/alert/status')
+@login_required
+def api_alert_status():
+    global last_weather
+    if last_weather is not None:
+        level, strategy, action = weather_to_alert_level(last_weather)
+        return jsonify({
+            "success": True,
+            "data": {
+                "current_level": level,
+                "detection_strategy": strategy,
+                "response_action": action,
+                "weather_type": last_weather.value
+            }
+        })
+    res = weather_pipeline.process_frame(
+        frame=np.zeros((480,640,3)),
+        sensor_metadata={},
+        prev_weather=last_weather
+    )
+    last_weather = res.weather
+    level, strategy, action = weather_to_alert_level(res.weather)
+    return jsonify({
+        "success": True,
+        "data": {
+            "current_level": level,
+            "detection_strategy": strategy,
+            "response_action": action,
+            "weather_type": res.weather.value
+        }
+    })
+
+# ==================== API：预警历史记录 ====================
+@app.route('/api/alert/history')
+@login_required
+def api_alert_history():
+    levels = ["一级（蓝色）","二级（黄色）","三级（橙色）","四级（红色）","五级（黑色）"]
+    history = []
+    for i in range(8):
+        history.append({
+            "level": random.choice(levels),
+            "location": f"区域-{random.randint(1,6)}",
+            "create_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "duration_minutes": random.randint(2, 45),
+            "is_escalated": random.choice([True, False]),
+            "emergency_plan_activated": random.choice([True, False])
+        })
+    return jsonify({"success": True, "data": history})
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

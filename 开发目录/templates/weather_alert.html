@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极境守护 - 极端天气预警中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="../static/navigation.css">
+    <style>
+        /* 全局动画 */
+        .alert-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        /* 加载动画 */
+        .loader-container { position: fixed; inset: 0; background: #0f172a; display: grid; place-content: center; z-index: 9999; }
+        .loader { width: 50px; height: 50px; border: 3px solid #164e63; border-top-color: #22d3ee; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text { margin-top: 12px; color: #94a3b8; text-align: center; }
+        /* 玻璃效果 */
+        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); }
+        .glow-text { text-shadow: 0 0 12px rgba(34,211,238,0.6); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+
+<!-- 加载动画 -->
+<div class="loader-container" id="loaderContainer">
+    <div class="loader"></div>
+    <div class="loader-text">极境守护系统加载中...</div>
+</div>
+
+<!-- 导航栏 -->
+<nav class="h-16 glass-panel fixed top-0 w-full z-50 flex items-center justify-between px-6 border-b border-cyan-500/30">
+  <div class="flex items-center gap-3">
+    <span class="iconify text-3xl text-cyan-400" data-icon="solar:shield-warning-bold-duotone"></span>
+    <span class="text-xl font-bold tracking-wider text-white">POLAR GUARD <span class="text-cyan-400 text-sm">极端天气预警中心</span></span>
+  </div>
+  <div class="flex items-center gap-8 text-sm overflow-x-auto no-scrollbar">
+    <a class="nav-link" href="/">导航中心</a>
+    <a class="nav-link" href="/data_collection">数据采集</a>
+    <a class="nav-link" href="/object_detection_controlcenter">目标检测</a>
+    <a class="nav-link" href="/visual_dashboard">监控中心</a>
+    <a class="nav-link" href="/history">历史溯源</a>
+    <a class="nav-link" href="/historical_data_analysis">数据分析</a>
+    <a class="nav-link" href="/model_management">模型管理</a>
+    <a class="nav-link" href="/edge_device_management">设备管理</a>
+    <a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 hover:text-cyan-400 whitespace-nowrap" href="/weather_alert">天气预警</a>
+    <a class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center ml-4 relative profile-ring" href="/user_center">
+      <span class="iconify" data-icon="solar:user-bold"></span>
+      <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+    </a>
+  </div>
+</nav>
+
+<main class="pt-24 px-6 min-h-screen relative overflow-hidden">
+  <div class="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none"></div>
+  <div class="max-w-7xl mx-auto relative z-10">
+
+    <div class="text-center mb-8">
+      <h1 class="text-5xl font-bold text-cyan-400 mb-4 glow-text">极端天气预警中心</h1>
+      <p class="text-slate-300 text-lg max-w-2xl mx-auto mb-6">实时监控极端天气状态，分级预警响应，保障极端环境下人员安全</p>
+    </div>
+
+    <!-- 图片上传 + 摄像头 实时检测区域 -->
+    <div class="glass-panel p-6 rounded-2xl mb-8 border border-cyan-500/30">
+        <h3 class="text-xl font-bold text-cyan-400 mb-4">实时天气检测</h3>
+        <div class="flex flex-col md:flex-row gap-4">
+            <!-- 图片上传 -->
+            <div class="flex-1 border border-dashed border-slate-600 rounded-lg p-4 text-center">
+                <p class="mb-2 text-slate-300">上传图片检测天气</p>
+                <input type="file" id="weatherImage" accept="image/*" class="hidden">
+                <button onclick="$('#weatherImage').click()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded text-sm">选择图片</button>
+            </div>
+            <!-- 摄像头实时检测 -->
+            <div class="flex-1 border border-dashed border-slate-600 rounded-lg p-4 text-center">
+                <p class="mb-2 text-slate-300">摄像头实时检测</p>
+                <button id="startCamera" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm">打开摄像头</button>
+                <button id="stopCamera" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-sm ml-2">关闭</button>
+            </div>
+        </div>
+        <p id="detectTip" class="text-green-400 text-sm mt-3 text-center hidden">✅ 检测成功，预警已更新</p>
+    </div>
+
+    <!-- 天气 + 预警状态卡片 -->
+    <div class="glass-panel p-8 rounded-2xl mb-8 border border-cyan-500/30" id="alertStatusCard">
+      <div class="flex items-center gap-4 mb-6">
+        <span class="iconify text-5xl text-yellow-400 alert-pulse" data-icon="solar:cloud-sun-angled-bold-duotone" id="alertIcon"></span>
+        <div>
+          <h2 class="text-3xl font-bold text-white" id="alertLevelText">加载中...</h2>
+          <p class="text-slate-400 text-sm" id="alertUpdateTime">最后更新：--</p>
+          <p class="text-cyan-400 text-sm mt-1" id="weatherTypeText">天气：--</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+        <div class="bg-slate-800/50 p-4 rounded-xl border border-cyan-500/20">
+          <p class="text-slate-400 text-sm mb-2">检测策略调整</p>
+          <p class="text-white text-lg font-medium" id="detectionStrategy">加载中...</p>
+        </div>
+        <div class="bg-slate-800/50 p-4 rounded-xl border border-cyan-500/20">
+          <p class="text-slate-400 text-sm mb-2">响应措施</p>
+          <p class="text-white text-lg font-medium" id="responseAction">加载中...</p>
+        </div>
+      </div>
+
+      <!-- 模型与参数 -->
+      <div class="bg-slate-800/50 p-4 rounded-xl border border-cyan-500/20 mb-6">
+        <p class="text-slate-400 text-sm mb-2">当前自适应模型 & 参数</p>
+        <p class="text-white text-md" id="modelInfo">加载中...</p>
+      </div>
+
+      <!-- 预警等级进度条 -->
+      <div class="mt-4">
+        <p class="text-slate-400 text-sm mb-2">预警等级进度</p>
+        <div class="h-3 bg-slate-700 rounded-full overflow-hidden flex">
+          <div class="w-1/5 h-full bg-blue-500 opacity-30" id="levelBar1"></div>
+          <div class="w-1/5 h-full bg-yellow-500 opacity-30" id="levelBar2"></div>
+          <div class="w-1/5 h-full bg-orange-500 opacity-30" id="levelBar3"></div>
+          <div class="w-1/5 h-full bg-red-500 opacity-30" id="levelBar4"></div>
+          <div class="w-1/5 h-full bg-black border border-white/20 opacity-30" id="levelBar5"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-400 mt-1">
+          <span>一级(蓝)</span><span>二级(黄)</span><span>三级(橙)</span><span>四级(红)</span><span>五级(黑)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 预警等级表 -->
+    <div class="glass-panel p-6 rounded-2xl mb-8 border border-cyan-500/30">
+      <h3 class="text-2xl font-bold text-cyan-400 mb-4">预警等级定义</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-cyan-500/30">
+              <th class="py-3 px-4 text-cyan-400">等级</th>
+              <th class="py-3 px-4 text-cyan-400">颜色</th>
+              <th class="py-3 px-4 text-cyan-400">气象条件</th>
+              <th class="py-3 px-4 text-cyan-400">检测策略调整</th>
+              <th class="py-3 px-4 text-cyan-400">响应措施</th>
+            </tr>
+          </thead>
+          <tbody class="text-slate-300">
+            <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+              <td class="py-3 px-4">一级（蓝色）</td>
+              <td class="py-3 px-4"><span class="w-4 h-4 rounded-full bg-blue-500 inline-block"></span></td>
+              <td class="py-3 px-4">轻度雨雪，能见度>1km</td>
+              <td class="py-3 px-4">标准检测参数</td>
+              <td class="py-3 px-4">正常监控，记录日志</td>
+            </tr>
+            <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+              <td class="py-3 px-4">二级（黄色）</td>
+              <td class="py-3 px-4"><span class="w-4 h-4 rounded-full bg-yellow-500 inline-block"></span></td>
+              <td class="py-3 px-4">中雨/小雪，能见度500m-1km</td>
+              <td class="py-3 px-4">降低置信度阈值</td>
+              <td class="py-3 px-4">增加检测频率，人工复核</td>
+            </tr>
+            <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+              <td class="py-3 px-4">三级（橙色）</td>
+              <td class="py-3 px-4"><span class="w-4 h-4 rounded-full bg-orange-500 inline-block"></span></td>
+              <td class="py-3 px-4">大雨/中雪，能见度200m-500m</td>
+              <td class="py-3 px-4">启用天气特定模型</td>
+              <td class="py-3 px-4">启动多模态融合，加强监控</td>
+            </tr>
+            <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+              <td class="py-3 px-4">四级（红色）</td>
+              <td class="py-3 px-4"><span class="w-4 h-4 rounded-full bg-red-500 inline-block"></span></td>
+              <td class="py-3 px-4">暴雨/大雪，能见度<200m</td>
+              <td class="py-3 px-4">启用极端天气模式</td>
+              <td class="py-3 px-4">全传感器融合，最高优先级告警</td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-3 px-4">五级（黑色）</td>
+              <td class="py-3 px-4"><span class="w-4 h-4 rounded-full bg-black border border-white/20 inline-block"></span></td>
+              <td class="py-3 px-4">特大暴雨/暴雪，能见度<50m</td>
+              <td class="py-3 px-4">应急检测模式</td>
+              <td class="py-3 px-4">启动应急预案，人工干预</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 预警历史 -->
+    <div class="glass-panel p-6 rounded-2xl mb-16 border border-cyan-500/30">
+      <h3 class="text-2xl font-bold text-cyan-400 mb-4">最近预警记录</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-cyan-500/30">
+              <th class="py-3 px-4 text-cyan-400">预警时间</th>
+              <th class="py-3 px-4 text-cyan-400">预警等级</th>
+              <th class="py-3 px-4 text-cyan-400">位置</th>
+              <th class="py-3 px-4 text-cyan-400">持续时间</th>
+              <th class="py-3 px-4 text-cyan-400">状态</th>
+            </tr>
+          </thead>
+          <tbody class="text-slate-300" id="alertHistoryBody">
+            <tr><td colspan="5" class="py-4 text-center">加载中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="glass-panel py-6 border-t border-cyan-500/20">
+    <div class="max-w-[1440px] mx-auto px-8 text-center text-slate-400 text-xs">
+        <p>© 2025 极境守护目标检测系统 | 使用 ViT-Polaris 模型构建</p>
+        <p class="mt-1">本系统仅供参考，不作为专业决策建议</p>
+    </div>
+</footer>
+
+<script src="../static/navigation.js"></script>
+<script>
+  // ====================== 全局配置 ======================
+  const levelConfig = {
+    "一级（蓝色）": { icon: "solar:sun-bold", color: "text-blue-400", bar: 1 },
+    "二级（黄色）": { icon: "solar:cloud-sun-angled-bold-duotone", color: "text-yellow-400", bar: 2 },
+    "三级（橙色）": { icon: "solar:cloud-rain-bold-duotone", color: "text-orange-400", bar: 3 },
+    "四级（红色）": { icon: "solar:cloud-lightning-bold-duotone", color: "text-red-400", bar: 4 },
+    "五级（黑色）": { icon: "solar:warning-bold-duotone", color: "text-white", bar: 5 }
+  };
+
+  let cameraStream = null;
+  let cameraInterval = null;
+
+  // ====================== 核心：刷新预警UI ======================
+  function refreshAlertUI() {
+    $.get('/api/alert/status', res => {
+      if(!res.success) return;
+      const d = res.data;
+      const cfg = levelConfig[d.current_level] || levelConfig["一级（蓝色）"];
+
+      $("#alertLevelText").text(`当前预警等级：${d.current_level}`);
+      $("#alertIcon").attr("data-icon", cfg.icon).removeClass().addClass(`iconify text-5xl ${cfg.color} alert-pulse`);
+      $("#detectionStrategy").text(d.detection_strategy);
+      $("#responseAction").text(d.response_action);
+      $("#weatherTypeText").text(`天气：${d.weather_type}`);
+      $("#alertUpdateTime").text(`最后更新：${new Date().toLocaleString()}`);
+
+      // 进度条高亮
+      for(let i=1;i<=5;i++) $(`#levelBar${i}`).removeClass("opacity-100").addClass("opacity-30");
+      for(let i=1;i<=cfg.bar;i++) $(`#levelBar${i}`).removeClass("opacity-30").addClass("opacity-100");
+    });
+  }
+
+  // ====================== 加载预警历史 ======================
+  function loadAlertHistory() {
+    $.get('/api/alert/history', res => {
+      if(!res.success) return;
+      const html = res.data.map(item => {
+        const color = {
+          "一级（蓝色）":"bg-blue-500",
+          "二级（黄色）":"bg-yellow-500",
+          "三级（橙色）":"bg-orange-500",
+          "四级（红色）":"bg-red-500",
+          "五级（黑色）":"bg-black border-white/20"
+        }[item.level] || "bg-slate-500";
+        return `
+        <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+          <td class="py-3 px-4">${item.create_time}</td>
+          <td class="py-3 px-4"><span class="w-3 h-3 rounded-full ${color} inline-block mr-2"></span>${item.level}</td>
+          <td class="py-3 px-4">${item.location}</td>
+          <td class="py-3 px-4">${item.duration_minutes}分钟</td>
+          <td class="py-3 px-4 ${item.is_escalated?'text-orange-400':item.emergency_plan_activated?'text-red-400':'text-green-400'}">
+            ${item.is_escalated?'已升级':item.emergency_plan_activated?'预案启动':'正常'}
+          </td>
+        </tr>`;
+      }).join('');
+      $("#alertHistoryBody").html(html);
+    });
+  }
+
+  // ====================== 图片上传检测天气 ======================
+  $("#weatherImage").on("change", function(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const fd = new FormData();
+    fd.append("image", file);
+    $.ajax({
+      url: "/api/weather/detect",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+      success: res => {
+        if(res.success) {
+          $("#detectTip").removeClass("hidden").text(`✅ 检测成功：当前天气 = ${res.weather}`);
+          refreshAlertUI();
+          setTimeout(()=>$("#detectTip").addClass("hidden"), 2000);
+        }
+      }
+    });
+  });
+
+  // ====================== 摄像头实时检测 ======================
+  $("#startCamera").click(() => {
+    if(!navigator.mediaDevices.getUserMedia) return alert("浏览器不支持摄像头");
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      cameraStream = stream;
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.play();
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      cameraInterval = setInterval(() => {
+        canvas.width = 320;
+        canvas.height = 240;
+        ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+        $.post("/api/weather/stream", { frame: base64 }, res => {
+          if(res.success) refreshAlertUI();
+        });
+      }, 3000);
+    });
+  });
+
+  $("#stopCamera").click(() => {
+    if(cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+    clearInterval(cameraInterval);
+  });
+
+  // ====================== 初始化 ======================
+  $(document).ready(() => {
+    setTimeout(() => $("#loaderContainer").fadeOut(500), 800);
+    refreshAlertUI();
+    loadAlertHistory();
+    setInterval(refreshAlertUI, 3000);
+    setInterval(loadAlertHistory, 10000);
+  });
+</script>
+</body>
+</html>
