@@ -18,6 +18,7 @@
         </div>
         <div class="flex items-center gap-8 text-sm">
             <a class="nav-link " href="/">导航中心</a>
+            <a class="hover:text-cyan-400 whitespace-nowrap" href="/data_collection">数据采集</a>
             <a class="hover:text-cyan-400 whitespace-nowrap" href="/object_detection_controlcenter">目标检测</a>
             <a class="hover:text-cyan-400 whitespace-nowrap" href="/visual_dashboard">监控中心</a>
             <a class="hover:text-cyan-400 whitespace-nowrap" href="/history">历史溯源</a>
@@ -94,7 +95,7 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-xs text-slate-500">绑定的生物验证</label>
-                        <p id="user-bio-verify" class="text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                        <p id="user-bio-verify" class="text-white flex items-center gap-2 border-b border-slate-700 pb-2 cursor-pointer hover:text-cyan-400 transition-colors" onclick="openBioVerifyModal()">
                             <span class="iconify text-green-400" data-icon="solar:fingerprint-bold"></span> 未录入
                         </p>
                     </div>
@@ -202,6 +203,10 @@
                     <label class="text-sm block mb-1">邮箱</label>
                     <input id="edit_email" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 outline-none focus:border-cyan-400" placeholder="请输入邮箱">
                 </div>
+                <div class="mb-4">
+                    <label class="block text-slate-300 mb-2">工号</label>
+                    <input type="text" id="edit_jobnumber" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500" placeholder="请输入工号">
+                </div>
             </div>
             <div class="flex gap-3 mt-6 justify-end">
                 <button onclick="closeEditModal()" class="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600">取消</button>
@@ -209,7 +214,31 @@
             </div>
         </div>
     </div>
-
+ <!-- 生物验证录入弹窗 -->
+    <div id="bioVerifyModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center">
+        <div class="glass-panel w-full max-w-lg rounded-xl p-6">
+            <h3 class="text-xl font-bold mb-4">生物验证录入</h3>
+            <div class="space-y-4">
+                <div class="text-center p-6 border-2 border-dashed border-slate-700 rounded-lg">
+                    <span class="iconify text-6xl text-cyan-400" data-icon="solar:fingerprint-bold"></span>
+                    <p class="mt-3 text-slate-300">请将手指放在指纹采集器上完成录入</p>
+                    <p class="text-xs text-slate-500 mt-1">（模拟录入，实际项目可对接硬件SDK）</p>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm block">验证状态</label>
+                    <select id="bio_verify_status" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 outline-none focus:border-cyan-400">
+                        <option value="未录入">未录入</option>
+                        <option value="已录入">已录入</option>
+                        <option value="已绑定">已绑定（启用）</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6 justify-end">
+                <button onclick="closeBioVerifyModal()" class="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600">取消</button>
+                <button onclick="saveBioVerify()" class="px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-400 text-black font-bold">确认录入</button>
+            </div>
+        </div>
+    </div>
     <script src="../static/user_center.js"></script>
 </body>
 </html>

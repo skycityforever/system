@@ -513,7 +513,7 @@ def get_login_logs():
         return jsonify({"success": False, "msg": str(e)}), 500
 
 # ==========================
-# 更新用户信息接口（新增）
+# 更新用户信息接口（新增工号+生物验证字段）
 # ==========================
 @app.route('/api/update-user', methods=['POST'])
 @login_required
@@ -523,21 +523,23 @@ def update_user():
         if not username:
             return jsonify({"success": False, "msg": "未登录"}), 401
 
-        # 获取前端传来的数据
+        # 获取前端传来的数据（新增jobNumber+bioVerify）
         data = request.get_json()
         realName = data.get('realName', '')
         phone = data.get('phone', '')
         email = data.get('email', '')
         nickname = data.get('nickname', '')
+        jobNumber = data.get('jobNumber', '')  # 工号字段
+        bioVerify = data.get('bioVerify', '')  # 生物验证字段
 
         # 读取JSON
         log_dir = os.path.join(os.path.dirname(__file__), 'log')
-        os.makedirs(log_dir, exist_ok=True)  # 自动创建log文件夹
+        os.makedirs(log_dir, exist_ok=True)
         users_path = os.path.join(log_dir, 'users.json')
         with open(users_path, 'r', encoding='utf-8') as f:
             users = json.load(f)
 
-        # 找到当前用户并更新
+        # 找到当前用户并更新（新增jobNumber+bioVerify）
         updated = False
         for user in users:
             if user.get('username') == username:
@@ -545,6 +547,9 @@ def update_user():
                 user['phone'] = phone
                 user['email'] = email
                 user['nickname'] = nickname
+                user['jobNumber'] = jobNumber
+                if bioVerify:  # 只有前端传了才更新，避免覆盖
+                    user['bioVerify'] = bioVerify
                 updated = True
                 break
 
@@ -621,7 +626,55 @@ def update_password():
     except Exception as e:
         print("修改密码错误:", e)
         return jsonify({"success": False, "msg": "修改失败：" + str(e)}), 500
+# ==========================
+# 生物验证录入/更新接口（新增）
+# ==========================
+@app.route('/api/update-bio-verify', methods=['POST'])
+@login_required
+def update_bio_verify():
+    try:
+        username = session.get('username')
+        if not username:
+            return jsonify({"success": False, "msg": "未登录"}), 401
 
+        # 获取前端传来的生物验证状态
+        data = request.get_json()
+        bioVerify = data.get('bioVerify', '未录入')  # 可选值：未录入/已录入/已绑定
+
+        # 读取JSON
+        log_dir = os.path.join(os.path.dirname(__file__), 'log')
+        os.makedirs(log_dir, exist_ok=True)
+        users_path = os.path.join(log_dir, 'users.json')
+        with open(users_path, 'r', encoding='utf-8') as f:
+            users = json.load(f)
+
+        # 找到当前用户并更新生物验证状态
+        updated = False
+        for user in users:
+            if user.get('username') == username:
+                user['bioVerify'] = bioVerify
+                updated = True
+                break
+
+        if not updated:
+            return jsonify({"success": False, "msg": "用户不存在"}), 404
+
+        # 写回文件
+        with open(users_path, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+        # 同步数据库（如果开启）
+        if DB_ENABLED:
+            try:
+                import_users()
+            except:
+                pass
+
+        return jsonify({"success": True, "msg": "生物验证状态更新成功", "bioVerify": bioVerify})
+
+    except Exception as e:
+        print("生物验证更新错误:", e)
+        return jsonify({"success": False, "msg": "更新失败：" + str(e)}), 500
 # ==========================
 # 模型切换接口（新增age_recognition映射）
 # ==========================

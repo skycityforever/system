@@ -85,6 +85,8 @@ function openEditModal() {
     document.getElementById('edit_phone').value = document.getElementById('user-phone').innerText;
     document.getElementById('edit_email').value = document.getElementById('user-email').innerText;
     document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('edit_jobnumber').value = document.getElementById('user-jobnumber').innerText === '未分配' ? '' : document.getElementById('user-jobnumber').innerText;
+    document.getElementById('editModal').style.display = 'flex';
 }
 
 // 关闭编辑弹窗
@@ -98,7 +100,9 @@ function saveUserInfo() {
         nickname: document.getElementById('edit_nickname').value,
         realName: document.getElementById('edit_realname').value,
         phone: document.getElementById('edit_phone').value,
-        email: document.getElementById('edit_email').value
+        email: document.getElementById('edit_email').value,
+        jobNumber: document.getElementById('edit_jobnumber').value,
+        bioVerify: document.getElementById('user-bio-verify').innerText.trim()
     };
 
     fetch('/api/update-user', {
@@ -207,3 +211,44 @@ function submitChangePassword() {
     });
 }
 
+// ================== 生物验证功能 ==================
+// 打开生物验证录入弹窗
+function openBioVerifyModal() {
+    // 获取当前生物验证状态，回显到下拉框
+    const currentStatus = document.getElementById('user-bio-verify').innerText.trim();
+    document.getElementById('bio_verify_status').value = currentStatus;
+    document.getElementById('bioVerifyModal').style.display = 'flex';
+}
+
+// 关闭生物验证录入弹窗
+function closeBioVerifyModal() {
+    document.getElementById('bioVerifyModal').style.display = 'none';
+}
+
+// 保存生物验证状态
+function saveBioVerify() {
+    const bioVerify = document.getElementById('bio_verify_status').value;
+
+    fetch('/api/update-bio-verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            bioVerify: bioVerify
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('生物验证状态更新成功！');
+            closeBioVerifyModal();
+            fetchCurrentUserInfo(); // 刷新页面显示
+        } else {
+            alert('更新失败：' + data.msg);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('网络错误，请重试');
+    });
+}
